@@ -69,6 +69,24 @@ int32_t wait_for_acquisition(void)
         return(-1);
     }
     
+    //wait for a buffer to be ready
+    int8_t *buff;
+    while(!board1->dataQ.pop(buff));
+    FILE_LOG(logDEBUG4) << "API POPPING DATA " << std::hex << (int64_t)buff ;
+    board1->bufferCounter++;
+    
+    //do stuff with it
+    
+    
+    //return the buffer
+    FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex << (int64_t)buff ;
+    board1->postBuffer(buff);
+
+
+
+
+    
+    
     return 0;
 }
 

@@ -9,6 +9,9 @@
 extern "C" {
 #endif
 
+#define MAX_NUM_BUFFERS 32
+
+
 typedef struct ConfigData
 {            
     char *      acquireMode;

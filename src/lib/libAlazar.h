@@ -4,29 +4,43 @@
 #include <stdint.h>
 #include <string>
 #include <iostream>
+#include <boost/lockfree/spsc_queue.hpp>
+
 
 #include "libAlazarConfig.h"
-
 
 class AlazarATS9870
 {
     
     public:
-                
-        ConfigData_t config;
         
+        std::atomic<bool> threadStop;
+        std::atomic<bool> threadRunning;
+        
+        boost::lockfree::spsc_queue<int8_t*, boost::lockfree::capacity<MAX_NUM_BUFFERS>> bufferQ;
+        boost::lockfree::spsc_queue<int8_t*, boost::lockfree::capacity<MAX_NUM_BUFFERS>> dataQ;
+        
+        std::atomic<int32_t> bufferCounter;
+
         AlazarATS9870();
         ~AlazarATS9870();
-                
-        int32_t rx( void );
-        
-        //run data receiver in a background thread
-        std::thread rxThread;
         void rxThreadRun( void );
-        bool threadStop;
-        bool threadRunning;
-        
         void rxThreadStop( void );
+        
+        void postBuffer( int8_t *buff);
+        
+    protected:
+        
+        ConfigData_t config;
+        
+        
+        std::thread rxThread;
+        
+        int32_t bufferLen;
+        
+
+        int32_t rx( void );       
+        
     
 };
 

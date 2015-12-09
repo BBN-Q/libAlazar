@@ -1,6 +1,7 @@
 //#include <cstdlib>
 //#include <string>
 //#include <thread>
+
 #include <unistd.h>
 
 #include "libAlazarAPI.h"
@@ -12,15 +13,19 @@ int main( void)
 
   acquire();
 
-  int count=5;
+  int count=20000000;
 
   while( count-- > 0)
   {
-      usleep(500000);
       FILE_LOG(logINFO) << "MAIN" ;
+      wait_for_acquisition();
+      usleep(5000);
 
   }
   
   stop();
+  disconnect();
+    
     
 }
+
