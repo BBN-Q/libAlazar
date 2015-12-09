@@ -108,6 +108,13 @@ int32_t transfer_waveform(void)
     return 0;
 }
 
+int32_t flash_led(int32_t numTimes, float period)
+{
+    FILE_LOG(logDEBUG4) << "Flashing LED ... ";
+    return 0;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

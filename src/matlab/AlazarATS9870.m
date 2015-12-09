@@ -67,17 +67,12 @@ classdef AlazarATS9870 < hgsetget
         end
         
         
-        function connect(obj, address)
-            %Get the handle to the board
-            %If only one board is installed, address = 1
-            if ~isnumeric(address)
-                address = str2double(address);
-            end
-            obj.systemId = address;
+        function connect(obj)
+           calllib('libAlazar','connect','foo.log');           
         end
         
         function disconnect(obj)
-
+           calllib('libAlazar','disconnect');
         end
         
         %Helper function to make an API call and error check
@@ -87,19 +82,8 @@ classdef AlazarATS9870 < hgsetget
         
         %Function to flash the LED (at least then we know something works).
         function flash_LED(obj, numTimes, period)
-            if nargin < 3
-                period = 1;
-            end
-            if nargin < 2
-                numTimes = 10;
-            end
-            for ct = 1:numTimes
-                %todo - call API function
-                pause(period/2);
-                
-                %todo - call API function
-                pause(period/2);
-            end
+           calllib('libAlazar','flash_led',numTimes,period);
+
         end
         
         %Instrument meta-setter that sets all parameters
@@ -109,31 +93,23 @@ classdef AlazarATS9870 < hgsetget
         
         %Setup and start an acquisition
         function acquire(obj)
-            %todo - call API function
+            
+            calllib('libAlazar','acquire');
+
+            
         end
         
         function stop(obj)
-            %todo - call API function
+            
+            calllib('libAlazar','stop');
         end
         
         
         %Wait for the acquisition to complete and average in software
         function status = wait_for_acquisition(obj, timeOut)
-            if ~exist('timeOut','var')
-                timeOut = obj.timeOut;
-            end
+        
+            pause(timeOut);
             
-            %Loop until all are processed
-            while toc(obj.lastBufferTimeStamp) < timeOut
-                if obj.done
-                    status = 0;
-                    return
-                else
-                    pause(0.2);
-                end
-            end
-            status = -1;
-            warning('AlazarATS9870:TIMEOUT', 'AlazarATS9870 timed out while waiting for acquisition');
         end
         
         % Dummy function for consistency with Acqiris card where average
@@ -152,6 +128,23 @@ classdef AlazarATS9870 < hgsetget
     end %methods
     
     methods (Static)
+        
+        function unit_test()
+            scope = AlazarATS9870();
+            scope.connect();
+
+            %scope.horizontal = struct('samplingRate', 500e6, 'delayTime', 0);
+            %scope.vertical = struct('verticalScale', 1.0, 'verticalCoupling', 'AC', 'bandwidth', 'Full');
+            %scope.trigger = struct('triggerLevel', 100, 'triggerSource', 'ext', 'triggerCoupling', 'DC', 'triggerSlope', 'rising');
+            %scope.averager = struct('recordLength', 4096, 'nbrSegments', 1, 'nbrWaveforms', 1, 'nbrRoundRobins', 1000, 'ditherRange', 0);
+            
+            scope.acquire();
+            scope.wait_for_acquisition(10);
+            scope.stop();  
+            scope.flash_LED(1,1);
+            scope.disconnect();
+        end
+
     
     end
 end %classdef
