@@ -8,7 +8,8 @@
 #include "AlazarApi.h"
 #include "libAlazarConfig.h"
 
-static boost::lockfree::spsc_queue<int8_t*, boost::lockfree::capacity<MAX_NUM_BUFFERS>> bufferQ;
+static boost::lockfree::spsc_queue<int8_t*,
+	boost::lockfree::capacity<MAX_NUM_BUFFERS>> bufferQ;
 
 RETURN_CODE AlazarPostAsyncBuffer (
 	HANDLE  hDevice,
@@ -17,7 +18,8 @@ RETURN_CODE AlazarPostAsyncBuffer (
 	)
 {    
     while(!bufferQ.push((int8_t*)pBuffer));
-    FILE_LOG(logDEBUG4) << "SIM POSTING BUFFER " << std::hex << (int64_t)pBuffer ;
+    FILE_LOG(logDEBUG4) << "SIM POSTING BUFFER " << std::hex 
+		<< (int64_t)pBuffer ;
 
     return ApiSuccess;
 }

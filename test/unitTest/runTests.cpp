@@ -6,25 +6,30 @@
 
 #include "libAlazarAPI.h"
 #include "logger.h"
+#include "libAlazarConfig.h"
 
+                       
 int main( void)
 {
-  connect(NULL);
+    ConfigData_t config;
+    
+    connect(NULL);
+    config.address = (const char*)"ADDR1";
+    setAll( config );
+    acquire();
 
-  acquire();
+    int count=100;
 
-  int count=20000000;
+   while( count-- > 0)
+   {
+       FILE_LOG(logINFO) << "MAIN" ;
+       wait_for_acquisition();
+       usleep(10000);
 
-  while( count-- > 0)
-  {
-      FILE_LOG(logINFO) << "MAIN" ;
-      wait_for_acquisition();
-      usleep(5000);
-
-  }
+   }
   
-  stop();
-  disconnect();
+   stop();
+   disconnect();
     
     
 }

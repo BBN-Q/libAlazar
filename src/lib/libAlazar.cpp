@@ -7,6 +7,7 @@
 
 #include "logger.h"
 #include "libAlazar.h"
+#include "libAlazarApi.h"
 #include "AlazarApi.h"
 
 using namespace std;
@@ -30,16 +31,29 @@ int32_t AlazarATS9870::rx( void)
     while( 1)
     {
         int8_t *buff=NULL;
-        while(!bufferQ.pop(buff));
+        while(!bufferQ.pop(buff))
+        {
+            if ( threadStop )
+            {
+                return 0;
+            }
+        }
         FILE_LOG(logDEBUG4) << "RX POPPED BUFFER " << std::hex << (int64_t)buff ;
         AlazarWaitAsyncBufferComplete(0,buff,0);
-        while(!dataQ.push(buff));
+        while(!dataQ.push(buff))
+        {
+            if ( threadStop )
+            {
+                return 0;
+            }
+            
+        }
         FILE_LOG(logDEBUG4) << "RX POSTING DATA " << std::hex << (int64_t)buff;
 
 
         if( threadStop )
         {
-            break;
+            return 0;
         }
         
     }
@@ -68,13 +82,13 @@ void AlazarATS9870::rxThreadRun( void )
 
 void AlazarATS9870::rxThreadStop( void )
 {
-    FILE_LOG(logDEBUG4) << "STOPPING RX THREAD" ;
     if( threadRunning)
     {
         threadStop = true;
         rxThread.join();
         threadRunning = false;
     }
+    FILE_LOG(logDEBUG4) << "STOPPING RX THREAD" ;
     threadStop = false;
 }
 void AlazarATS9870::postBuffer( int8_t *buff)

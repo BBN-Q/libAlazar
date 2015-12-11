@@ -9,6 +9,7 @@
 
 #include "logger.h"
 #include "libAlazar.h"
+#include "libAlazarConfig.h"
 
 using namespace std;
 
@@ -35,12 +36,15 @@ int32_t connect( const char* logFile )
 
 }
 
-int32_t setAll(void)
+int32_t setAll(ConfigData_t config)
 {
     if( !board1 )
     {
         return(-1);
     }
+    
+    FILE_LOG(logDEBUG4) << "CONFIG address " << config.address ;
+    
     return 0;
 }
 
@@ -71,7 +75,10 @@ int32_t wait_for_acquisition(void)
     
     //wait for a buffer to be ready
     int8_t *buff;
-    while(!board1->dataQ.pop(buff));
+    if(!board1->dataQ.pop(buff))
+    {
+        return 0;
+    }
     FILE_LOG(logDEBUG4) << "API POPPING DATA " << std::hex << (int64_t)buff ;
     board1->bufferCounter++;
     

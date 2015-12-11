@@ -8,6 +8,7 @@
 
 
 #include "libAlazarConfig.h"
+#include "libAlazarAPI.h"
 
 class AlazarATS9870
 {
@@ -16,8 +17,8 @@ class AlazarATS9870
         
         std::atomic<bool> threadStop;
         std::atomic<bool> threadRunning;
-        
-        boost::lockfree::spsc_queue<int8_t*, boost::lockfree::capacity<MAX_NUM_BUFFERS>> bufferQ;
+            
+        boost::lockfree::spsc_queue<int8_t*,  boost::lockfree::capacity<MAX_NUM_BUFFERS>> bufferQ;
         boost::lockfree::spsc_queue<int8_t*, boost::lockfree::capacity<MAX_NUM_BUFFERS>> dataQ;
         
         std::atomic<int32_t> bufferCounter;

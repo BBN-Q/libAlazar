@@ -55,15 +55,24 @@ classdef AlazarATS9870 < hgsetget
         %Constuctor which loads definitions and dll
         function obj = AlazarATS9870()
         
-        %todo - make paths configurable    
-        [~,~] = loadlibrary('../../build/libAlazar.dylib','../lib/libAlazarAPI.h');
-            
+        %todo - make paths configurable
+        
+        if( ismac )
+            % the mac build os for testin only - it uses a simulated Alazar
+            % shared library
+            [~,~] = loadlibrary(fullfile(pwd,'../../build/lib/libAlazar.dylib'),fullfile(pwd,'../../build/lib/libAlazarAPI.h'));
+        else
+            %todo - fix for windows
+            [~,~] = loadlibrary(fullfile(pwd,'../../build/lib/libAlazar.dylib'),fullfile(pwd,'../../build/lib/libAlazarAPI.h'));
+        end
+        
         end
         
         %Destructor
         function delete(obj)
             obj.stop();
             obj.disconnect();
+            unloadlibrary('libALazar');
         end
         
         
@@ -107,8 +116,10 @@ classdef AlazarATS9870 < hgsetget
         
         %Wait for the acquisition to complete and average in software
         function status = wait_for_acquisition(obj, timeOut)
-        
+            
+            calllib('libAlazar','wait_for_acquisition');
             pause(timeOut);
+            fprintf(1,'HELLO\n');
             
         end
         
@@ -139,7 +150,7 @@ classdef AlazarATS9870 < hgsetget
             %scope.averager = struct('recordLength', 4096, 'nbrSegments', 1, 'nbrWaveforms', 1, 'nbrRoundRobins', 1000, 'ditherRange', 0);
             
             scope.acquire();
-            scope.wait_for_acquisition(10);
+            scope.wait_for_acquisition(1);
             scope.stop();  
             scope.flash_LED(1,1);
             scope.disconnect();

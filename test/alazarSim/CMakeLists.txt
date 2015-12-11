@@ -1,6 +1,5 @@
 #include own library headers
 
-
 INCLUDE_DIRECTORIES("./" ${ALAZAR_INLCUDE_PATH} "../../src/lib")
 
 #Some compile flags
@@ -12,6 +11,6 @@ SET ( LIB_SRC
 
 SET_SOURCE_FILES_PROPERTIES( ${LIB_SRC} PROPERTIES LANGUAGE CXX )
 
-ADD_LIBRARY( AlazarSim SHARED ${LIB_SRC} )
+ADD_LIBRARY( AlazarSim STATIC ${LIB_SRC} )
 
-install(TARGETS AlazarSim DESTINATION ".")
+install(TARGETS AlazarSim DESTINATION lib)
