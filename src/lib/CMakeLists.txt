@@ -15,18 +15,19 @@ ADD_LIBRARY( Alazar SHARED ${LIB_SRC} )
 
 #todo - alazar api library needs to be a build parameter
 
-if(WIN32)
-	TARGET_LINK_LIBRARIES(Alazar
-		pthread
-		#todo - handle dll location in windows
-		Alazar
-	)
-else()
+if(SIM)
 	#an alazar simulator is used on osx for testing purposes
 	TARGET_LINK_LIBRARIES(Alazar
 		pthread
 		AlazarSim
 	)
+else()
+	TARGET_LINK_LIBRARIES(Alazar
+		pthread
+		#todo - handle dll location in windows
+		Alazar
+	)
+
 endif()
 
 

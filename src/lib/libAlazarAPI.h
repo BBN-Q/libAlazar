@@ -31,7 +31,7 @@ typedef struct ConfigData
 
 
 
-int32_t connect( const char* );
+int32_t connectBoard( const char* );
 int32_t disconnect(void);
 int32_t setAll(ConfigData_t config);
 int32_t acquire(void);

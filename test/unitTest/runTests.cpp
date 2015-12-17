@@ -13,7 +13,7 @@ int main( void)
 {
     ConfigData_t config;
     
-    connect(NULL);
+    connectBoard(NULL);
     config.address = (const char*)"ADDR1";
     setAll( config );
     acquire();

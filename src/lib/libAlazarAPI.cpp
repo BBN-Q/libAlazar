@@ -19,7 +19,7 @@ AlazarATS9870 *board1=NULL;
 extern "C"{
 #endif    
 
-int32_t connect( const char* logFile )
+int32_t connectBoard( const char* logFile )
 {    
     FILE *pFile = stdout;
     

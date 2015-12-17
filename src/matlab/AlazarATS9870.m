@@ -63,7 +63,7 @@ classdef AlazarATS9870 < hgsetget
             [~,~] = loadlibrary(fullfile(pwd,'../../build/lib/libAlazar.dylib'),fullfile(pwd,'../../build/lib/libAlazarAPI.h'));
         else
             %todo - fix for windows
-            [~,~] = loadlibrary(fullfile(pwd,'../../build/lib/libAlazar.dylib'),fullfile(pwd,'../../build/lib/libAlazarAPI.h'));
+            [~,~] = loadlibrary(fullfile(pwd,'../../build/lib/libAlazar.dll'),fullfile(pwd,'../../build/lib/libAlazarAPI.h'));
         end
         
         end
