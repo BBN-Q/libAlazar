@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string>
 #include <iostream>
+#include <atomic>
 #include <boost/lockfree/spsc_queue.hpp>
 
 

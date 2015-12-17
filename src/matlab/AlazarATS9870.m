@@ -77,7 +77,7 @@ classdef AlazarATS9870 < hgsetget
         
         
         function connect(obj)
-           calllib('libAlazar','connect','foo.log');           
+           calllib('libAlazar','connectBoard','foo.log');           
         end
         
         function disconnect(obj)
