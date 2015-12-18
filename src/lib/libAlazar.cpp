@@ -8,7 +8,6 @@
 #include "logger.h"
 #include "libAlazar.h"
 #include "libAlazarApi.h"
-#include "AlazarApi.h"
 
 using namespace std;
 
@@ -39,7 +38,13 @@ int32_t AlazarATS9870::rx( void)
             }
         }
         FILE_LOG(logDEBUG4) << "RX POPPED BUFFER " << std::hex << (int64_t)buff ;
-        AlazarWaitAsyncBufferComplete(0,buff,0);
+        //todo check error code
+        RETURN_CODE retCode = AlazarWaitAsyncBufferComplete(0,buff,0);
+        if( retCode != ApiSuccess)
+        {            
+            printError(retCode,__FILE__,__LINE__);
+        }
+
         while(!dataQ.push(buff))
         {
             if ( threadStop )
@@ -94,8 +99,111 @@ void AlazarATS9870::rxThreadStop( void )
 void AlazarATS9870::postBuffer( int8_t *buff)
 {
     while (!bufferQ.push(buff));
-    AlazarPostAsyncBuffer(0,buff,bufferLen);
+    RETURN_CODE retCode = AlazarPostAsyncBuffer(0,buff,bufferLen);
+    if( retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+    }
+
 }
 
+std::map<RETURN_CODE,std::string> AlazarATS9870::errorMap =
+{
+    {ApiSuccess,"ApiSuccess"},
+    {ApiFailed,"ApiFailed"},
+    {ApiAccessDenied,"ApiAccessDenied"},
+    {ApiDmaChannelUnavailable,"ApiDmaChannelUnavailable"},
+    {ApiDmaChannelInvalid,"ApiDmaChannelInvalid"},
+    {ApiDmaChannelTypeError,"ApiDmaChannelTypeError"},
+    {ApiDmaInProgress,"ApiDmaInProgress"},
+    {ApiDmaDone,"ApiDmaDone"},
+    {ApiDmaPaused,"ApiDmaPaused"},
+    {ApiDmaNotPaused,"ApiDmaNotPaused"},
+    {ApiDmaCommandInvalid,"ApiDmaCommandInvalid"},
+    {ApiDmaManReady,"ApiDmaManReady"},
+    {ApiDmaManNotReady,"ApiDmaManNotReady"},
+    {ApiDmaInvalidChannelPriority,"ApiDmaInvalidChannelPriority"},
+    {ApiDmaManCorrupted,"ApiDmaManCorrupted"},
+    {ApiDmaInvalidElementIndex,"ApiDmaInvalidElementIndex"},
+    {ApiDmaNoMoreElements,"ApiDmaNoMoreElements"},
+    {ApiDmaSglInvalid,"ApiDmaSglInvalid"},
+    {ApiDmaSglQueueFull,"ApiDmaSglQueueFull"},
+    {ApiNullParam,"ApiNullParam"},
+    {ApiInvalidBusIndex,"ApiInvalidBusIndex"},
+    {ApiUnsupportedFunction,"ApiUnsupportedFunction"},
+    {ApiInvalidPciSpace,"ApiInvalidPciSpace"},
+    {ApiInvalidIopSpace,"ApiInvalidIopSpace"},
+    {ApiInvalidSize,"ApiInvalidSize"},
+    {ApiInvalidAddress,"ApiInvalidAddress"},
+    {ApiInvalidAccessType,"ApiInvalidAccessType"},
+    {ApiInvalidIndex,"ApiInvalidIndex"},
+    {ApiMuNotReady,"ApiMuNotReady"},
+    {ApiMuFifoEmpty,"ApiMuFifoEmpty"},
+    {ApiMuFifoFull,"ApiMuFifoFull"},
+    {ApiInvalidRegister,"ApiInvalidRegister"},
+    {ApiDoorbellClearFailed,"ApiDoorbellClearFailed"},
+    {ApiInvalidUserPin,"ApiInvalidUserPin"},
+    {ApiInvalidUserState,"ApiInvalidUserState"},
+    {ApiEepromNotPresent,"ApiEepromNotPresent"},
+    {ApiEepromTypeNotSupported,"ApiEepromTypeNotSupported"},
+    {ApiEepromBlank,"ApiEepromBlank"},
+    {ApiConfigAccessFailed,"ApiConfigAccessFailed"},
+    {ApiInvalidDeviceInfo,"ApiInvalidDeviceInfo"},
+    {ApiNoActiveDriver,"ApiNoActiveDriver"},
+    {ApiInsufficientResources,"ApiInsufficientResources"},
+    {ApiObjectAlreadyAllocated,"ApiObjectAlreadyAllocated"},
+    {ApiAlreadyInitialized,"ApiAlreadyInitialized"},
+    {ApiNotInitialized,"ApiNotInitialized"},
+    {ApiBadConfigRegEndianMode,"ApiBadConfigRegEndianMode"},
+    {ApiInvalidPowerState,"ApiInvalidPowerState"},
+    {ApiPowerDown,"ApiPowerDown"},
+    {ApiFlybyNotSupported,"ApiFlybyNotSupported"},
+    {ApiNotSupportThisChannel,"ApiNotSupportThisChannel"},
+    {ApiNoAction,"ApiNoAction"},
+    {ApiHSNotSupported,"ApiHSNotSupported"},
+    {ApiVPDNotSupported,"ApiVPDNotSupported"},
+    {ApiVpdNotEnabled,"ApiVpdNotEnabled"},
+    {ApiNoMoreCap,"ApiNoMoreCap"},
+    {ApiInvalidOffset,"ApiInvalidOffset"},
+    {ApiBadPinDirection,"ApiBadPinDirection"},
+    {ApiPciTimeout,"ApiPciTimeout"},
+    {ApiDmaChannelClosed,"ApiDmaChannelClosed"},
+    {ApiDmaChannelError,"ApiDmaChannelError"},
+    {ApiInvalidHandle,"ApiInvalidHandle"},
+    {ApiBufferNotReady,"ApiBufferNotReady"},
+    {ApiInvalidData,"ApiInvalidData"},
+    {ApiDoNothing,"ApiDoNothing"},
+    {ApiDmaSglBuildFailed,"ApiDmaSglBuildFailed"},
+    {ApiPMNotSupported,"ApiPMNotSupported"},
+    {ApiInvalidDriverVersion,"ApiInvalidDriverVersion"},
+    {ApiWaitTimeout,"ApiWaitTimeout"},
+    {ApiWaitCanceled,"ApiWaitCanceled"},
+    {ApiBufferTooSmall,"ApiBufferTooSmall"},
+    {ApiBufferOverflow,"ApiBufferOverflow"},
+    {ApiInvalidBuffer,"ApiInvalidBuffer"},
+    {ApiInvalidRecordsPerBuffer,"ApiInvalidRecordsPerBuffer"},
+    {ApiDmaPending,"ApiDmaPending"},
+    {ApiLockAndProbePagesFailed,"ApiLockAndProbePagesFailed"},
+    {ApiWaitAbandoned,"ApiWaitAbandoned"},
+    {ApiWaitFailed,"ApiWaitFailed"},
+    {ApiTransferComplete,"ApiTransferComplete"},
+    {ApiPllNotLocked,"ApiPllNotLocked"},
+    {ApiNotSupportedInDualChannelMode,"ApiNotSupportedInDualChannelMode"},    
+    {ApiLastError ,"ApiLastError"},
 
+};
+
+void AlazarATS9870::printError(RETURN_CODE code, std::string file, int32_t line )
+{
+    if( code < ApiSuccess || code > ApiLastError)
+    {
+        FILE_LOG(logERROR) << "File: " << file << " Line: "<< line << " ERROR: " << std::to_string(code) << " " << "Invalid API Error Code" ;
+    }
+    else
+    {
+        FILE_LOG(logERROR) << "File: " << file << " Line: "<< line << " ERROR: " << std::to_string(code) << " " << errorMap[code] ;
+        
+    }
+    
+}
 

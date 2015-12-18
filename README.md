@@ -1,21 +1,45 @@
 [libAlazar wiki](https://qiplab.bbn.com/BUQ-Lab/libAlazar/wikis/home)
 
-@todo
-add stuff
 
-dependencies:
-pacman -S mingw-w64-x86_64-boost
-http://www.mathworks.com/help/matlab/matlab_external/install-mingw-support-package.html
-http://www.mathworks.com/help/matlab/matlab_external/compiling-c-mex-files-with-mingw.html
+# Build Dependencies:
+* pacman -S mingw-w64-x86_64-boost
+* http://www.mathworks.com/help/matlab/matlab_external/install-mingw-support-package.html
+* http://www.mathworks.com/help/matlab/matlab_external/compiling-c-mex-files-with-mingw.html
 
-On MAC 
+# Build Instructions
+
+On Windows:
+```
+mkdir build
+cd build
+cmake -G "MSYS Makefiles"  ..
+make clean install
+```
+Uses default values for 
+SIM=false and 
+ALAZAR_INCLUDE_PATH=../AlazarTech/ATS-SDK/6.0.3/Samples/Include
+Use -D option in cmake line to change from defaults.
+For example:
+cmake -G "MSYS Makefiles" -DSIM=true -DALAZAR_INCLUDE_PATH=<path to SDK inlcude file>
+
+Building with the Simulator in OSX ( not tested on Linux yet):
+Don't use the -G option for cmake
+
+
+
+# On MAC 
 need to export the path to the relocatable shared library
 export DYLD_LIBRARY_PATH=/Users/rmcgurrin/sandbox/q/libAlazar/build/lib
 
-On Windows
+# On Windows
 Windows matlabSet variable using Windows Control Panel
 
-To set the environment variable on Windows 7:
+
+Need TDM-GCC-64 Compiler to build the thunk file.  Can be added as a Matlab 
+package
+
+
+To set the MW_MINGW64_LOC environment variable on Windows 7:
 
 * Make sure you have administrative privileges.
 * Select Computer from the Start menu.
@@ -26,4 +50,19 @@ To set the environment variable on Windows 7:
 * In the New System Variable dialog box, type MW_MINGW64_LOC in the Variable name field.
 * In the Variable value field, type the location of the MinGW-w64 compiler installation, for example, C:\TDM-GCC-64.
 * Click Ok to close the dialog boxes, then close the Control Panel dialog box.
+
+
+# ATS9870 DLL ad SDK
+Using version 5.10.6 of the dll.  Temporarily added it to the repo.  Build assumes
+it is installed in C:\Windows\System32
+
+todo - add variable dll path to cmake
+
+Assumes Alazar SDK directory is found ../AlazarTech/ATS-SDK relative to the libAlazar
+project dir.
+
+todo - add variable to specify path to sdk
+
+Using v 6.0.3 of the Alazar SDK
+
 

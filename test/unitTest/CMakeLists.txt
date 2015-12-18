@@ -1,10 +1,10 @@
 #include own library headers
 
-INCLUDE_DIRECTORIES("./" "../../src/lib")
+INCLUDE_DIRECTORIES("./" "../../src/lib" ${ALAZAR_INCLUDE_PATH})
 
 #Some compile flags
-ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall ")
-ADD_DEFINITIONS(${CMAKE_C_FLAGS} "-Wall ")
+ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
+ADD_DEFINITIONS(${CMAKE_C_FLAGS} "-Wall")
 
 SET_SOURCE_FILES_PROPERTIES( ${LIB_SRC} PROPERTIES LANGUAGE CXX )
 
@@ -20,4 +20,19 @@ TARGET_LINK_LIBRARIES(run_tests
 	Alazar
 )
 
-install(TARGETS run_tests DESTINATION lib)
+TARGET_LINK_LIBRARIES(run_tests
+	Alazar
+)
+
+ADD_EXECUTABLE(errorTest
+	./errorTest.cpp
+)
+
+TARGET_LINK_LIBRARIES(errorTest
+	Alazar
+)
+
+
+
+
+install(TARGETS run_tests errorTest DESTINATION bin)
