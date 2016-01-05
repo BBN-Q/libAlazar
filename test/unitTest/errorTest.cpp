@@ -9,12 +9,11 @@
 #include "AlazarError.h"
 #include "libAlazar.h"
 
-                       
 int main( int argc, char *argv[])
 {
     if( argc < 2)
     {
-        printf("USAGE: %s <numerical error code>\n",argv[0]);
+        printf("USAGE: %s <numerical error code between 512 and 592>\n",argv[0]);
         exit(-1);
     }
     
@@ -23,7 +22,7 @@ int main( int argc, char *argv[])
     
     std::cout << "ERROR TEST ..." << std::endl;
     board1.printError((RETURN_CODE)std::stoi(argv[1]),__FILE__,__LINE__);
-    
+        
     return(0);
 }
 

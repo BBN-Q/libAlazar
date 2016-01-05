@@ -8,7 +8,7 @@
 
 # Build Instructions
 
-On Windows:
+##  On Windows:
 ```
 mkdir build
 cd build
@@ -22,17 +22,28 @@ Use -D option in cmake line to change from defaults.
 For example:
 cmake -G "MSYS Makefiles" -DSIM=true -DALAZAR_INCLUDE_PATH=<path to SDK inlcude file>
 
+## OSX/Linux
 Building with the Simulator in OSX ( not tested on Linux yet):
 Don't use the -G option for cmake
 
+## Library version
+Uses the most recent git tag and SHA1.  Format is:
+
+```
+R<MAJOR>_<MINOR>-<SHA1>-<dirty[OPTIONAL]>
+```
+"dirty" indicates that the code was built from a branch with uncommitted code.
 
 
-# On MAC 
+# Matlab Driver
+
+## Windows
+Windows matlabSet variable using Windows Control Panel
+
+##  On MAC 
 need to export the path to the relocatable shared library
 export DYLD_LIBRARY_PATH=/Users/rmcgurrin/sandbox/q/libAlazar/build/lib
 
-# On Windows
-Windows matlabSet variable using Windows Control Panel
 
 
 Need TDM-GCC-64 Compiler to build the thunk file.  Can be added as a Matlab 
@@ -54,7 +65,7 @@ To set the MW_MINGW64_LOC environment variable on Windows 7:
 
 # ATS9870 DLL ad SDK
 Using version 5.10.6 of the dll.  Temporarily added it to the repo.  Build assumes
-it is installed in C:\Windows\System32
+it is installed in C:\Windows\System32\ATSApi.dll
 
 todo - add variable dll path to cmake
 

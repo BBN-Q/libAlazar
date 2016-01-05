@@ -10,6 +10,7 @@
 #include "logger.h"
 #include "libAlazar.h"
 #include "libAlazarConfig.h"
+#include "version.h"
 
 using namespace std;
 
@@ -28,7 +29,9 @@ int32_t connectBoard( const char* logFile )
         pFile = fopen(logFile, "a"); 
     }
     
-    Output2FILE::Stream() = pFile;       
+    Output2FILE::Stream() = pFile;    
+    FILE_LOG(logINFO) << std::string(VERSION);
+   
     
     board1 = new AlazarATS9870;    
 
