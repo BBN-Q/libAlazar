@@ -14,11 +14,12 @@ SET ( CMAKE_BUILD_TYPE Debug )
 
 #alazar shared libraries
 if(NOT ALAZAR_INCLUDE_PATH)
-	get_filename_component(ALAZAR_INCLUDE_PATH ../AlazarTech/ATS-SDK/6.0.3/Samples/Include ABSOLUTE)
+	get_filename_component(ALAZAR_INCLUDE_PATH ATS9870_dll_5_10_6/ ABSOLUTE)
 endif()
 
-
-add_subdirectory(test/alazarSim)
+if(SIM)
+	add_subdirectory(test/alazarSim)
+endif()
 add_subdirectory(src/lib)
 add_subdirectory(test/unitTest)
 

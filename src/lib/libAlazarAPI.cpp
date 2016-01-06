@@ -30,10 +30,11 @@ int32_t connectBoard( const char* logFile )
     }
     
     Output2FILE::Stream() = pFile;    
-    FILE_LOG(logINFO) << std::string(VERSION);
+    FILE_LOG(logINFO) << "libAlazar Rev "<<std::string(VERSION);
    
     
-    board1 = new AlazarATS9870;    
+    board1 = new AlazarATS9870;   
+    board1->sysInfo(); 
 
     return(0);
 

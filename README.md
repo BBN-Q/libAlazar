@@ -1,12 +1,14 @@
 [libAlazar wiki](https://qiplab.bbn.com/BUQ-Lab/libAlazar/wikis/home)
 
 
-# Build Dependencies:
+# Build Instructions
+======================
+
+## Build Dependencies:
 * pacman -S mingw-w64-x86_64-boost
 * http://www.mathworks.com/help/matlab/matlab_external/install-mingw-support-package.html
 * http://www.mathworks.com/help/matlab/matlab_external/compiling-c-mex-files-with-mingw.html
 
-# Build Instructions
 
 ##  On Windows:
 ```
@@ -36,6 +38,7 @@ R<MAJOR>_<MINOR>-<SHA1>-<dirty[OPTIONAL]>
 
 
 # Matlab Driver
+================
 
 ## Windows
 Windows matlabSet variable using Windows Control Panel
@@ -64,6 +67,7 @@ To set the MW_MINGW64_LOC environment variable on Windows 7:
 
 
 # ATS9870 DLL ad SDK
+======================
 Using version 5.10.6 of the dll.  Temporarily added it to the repo.  Build assumes
 it is installed in C:\Windows\System32\ATSApi.dll
 

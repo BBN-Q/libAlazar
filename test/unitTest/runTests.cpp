@@ -15,18 +15,19 @@ int main( int argc, char *argv[])
     setAll( config );
     acquire();
 
+    #if 0
     int count=100;
+    while( count-- > 0)
+    {
+        FILE_LOG(logDEBUG4) << "MAIN" ;
+        wait_for_acquisition();
+        usleep(10000);
 
-   while( count-- > 0)
-   {
-       FILE_LOG(logDEBUG4) << "MAIN" ;
-       wait_for_acquisition();
-       usleep(10000);
-
-   }
+    }
+    #endif
   
-   stop();
-   disconnect();
+    stop();
+    disconnect();
     
     
 }

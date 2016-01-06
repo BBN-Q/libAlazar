@@ -15,9 +15,9 @@ ADD_LIBRARY( Alazar SHARED ${LIB_SRC} )
 #todo - alazar api library needs to be a build parameter
 
 add_custom_command(TARGET Alazar
-                   PRE_BUILD 
+                   PRE_BUILD
                    COMMAND sh ${CMAKE_CURRENT_LIST_DIR}/version.sh > ${CMAKE_CURRENT_LIST_DIR}/version.h
-				   ) 
+				   )
 
 #Some compile flags
 ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
@@ -30,7 +30,7 @@ if(SIM)
 )
 else()
 	TARGET_LINK_LIBRARIES(Alazar
-		/c/windows/system32/ATSApi.dll		
+		/c/windows/system32/ATSApi.dll
 )
 endif()
 
