@@ -4,13 +4,21 @@
 #include <unistd.h>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <map>
+#include <math.h>
 
 #include "logger.h"
 #include "AlazarApi.h"
-#include "libAlazarConfig.h"
+#include "libAlazar.h"
+
 
 static boost::lockfree::spsc_queue<int8_t*,
 	boost::lockfree::capacity<MAX_NUM_BUFFERS>> bufferQ;
+
+uint32_t dummyBoard;
+uint32_t recordSize;
+uint32_t bufferLenBytes;
+uint32_t samplesPerRecord;
+uint32_t testCyclesPerRecord = 1;
 
 RETURN_CODE AlazarPostAsyncBuffer (
 	HANDLE  hDevice,
@@ -19,9 +27,10 @@ RETURN_CODE AlazarPostAsyncBuffer (
 	)
 {    
     while(!bufferQ.push((int8_t*)pBuffer));
-    FILE_LOG(logDEBUG4) << "SIM POSTING BUFFER " << std::hex 
-		<< (int64_t)pBuffer ;
+    //FILE_LOG(logDEBUG4) << "SIM POSTING BUFFER " << std::hex 
+		//<< (int64_t)pBuffer ;
 
+	bufferLenBytes = uBufferLength_bytes;
     return ApiSuccess;
 }
 
@@ -33,7 +42,14 @@ RETURN_CODE  AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
     while(!bufferQ.pop(temp));
     if( temp == pBuffer)
     {
-        FILE_LOG(logDEBUG4) << "SIM SENDING DATA " << std::hex << (int64_t)pBuffer ;
+		
+		//fill in with some dummy data
+		for( uint32_t i=0; i < bufferLenBytes/2; i++)
+		{
+			temp[2*i]   = (int8_t)(cosf(2*M_PI*i*(float)testCyclesPerRecord/samplesPerRecord)*127) + 128;
+			temp[2*i+1] = (int8_t)(sinf(2*M_PI*i*(float)testCyclesPerRecord/samplesPerRecord)*127) + 128;
+		}
+
         return ApiSuccess;
 
     }
@@ -180,7 +196,8 @@ U32 AlazarBoardsInSystemBySystemID(U32 sid)
 
 HANDLE AlazarGetBoardBySystemID(U32 sid, U32 brdNum)
 {
-	return NULL;
+	return &dummyBoard;
+;
 }
 
 U32 AlazarGetBoardKind(HANDLE h)
@@ -218,12 +235,11 @@ RETURN_CODE AlazarGetDriverVersion (
 	
 }
 
-uint32_t dummy;
 HANDLE AlazarGetSystemHandle (
       U32 SystemId
 )
 {
-	return (HANDLE)&dummy;
+	return (HANDLE)&dummyBoard;
 }
 
 RETURN_CODE AlazarQueryCapability (
@@ -255,3 +271,87 @@ RETURN_CODE AlazarSetLED (
 	return ApiSuccess;
 }
 
+RETURN_CODE EXPORT AlazarSetCaptureClock(HANDLE h, U32 Source, U32 Rate,
+                                         U32 Edge, U32 Decimation)
+{
+	//todo - parameter checking
+	return ApiSuccess;
+}
+
+RETURN_CODE AlazarInputControl(HANDLE h, U8 Channel, U32 Coupling,
+                                      U32 InputRange, U32 Impedance)
+{
+	//todo - parameter checking
+	return ApiSuccess;
+}
+
+RETURN_CODE AlazarSetBWLimit(HANDLE h, U32 Channel, U32 enable)
+{
+	//todo - parameter checking
+	return ApiSuccess;
+}
+RETURN_CODE AlazarSetExternalTrigger(HANDLE h, U32 Coupling, U32 Range)
+{
+	//todo - parameter checking
+	return ApiSuccess;
+}
+
+RETURN_CODE 
+    AlazarSetTriggerOperation(HANDLE h, U32 TriggerOperation,
+                              U32 TriggerEngine1 /*j,K*/, U32 Source1,
+                              U32 Slope1, U32 Level1,
+                              U32 TriggerEngine2 /*j,K*/, U32 Source2,
+                              U32 Slope2, U32 Level2)
+{
+	return ApiSuccess;	
+}
+
+RETURN_CODE AlazarSetTriggerDelay(HANDLE h, U32 Delay)
+{
+	return ApiSuccess;		
+}
+RETURN_CODE EXPORT AlazarSetTriggerTimeOut(HANDLE h, U32 to_ns)
+{
+	return ApiSuccess;	
+}
+
+RETURN_CODE AlazarSetRecordSize(HANDLE h, U32 PreSize, U32 PostSize)
+{
+	recordSize = PostSize;
+	return ApiSuccess;		
+}
+
+RETURN_CODE AlazarBeforeAsyncRead(HANDLE hBoard, U32 uChannelSelect,
+                          long lTransferOffset, U32 uSamplesPerRecord,
+                          U32 uRecordsPerBuffer, U32 uRecordsPerAcquisition,
+                          U32 uFlags)
+{
+	
+	samplesPerRecord = uSamplesPerRecord;
+	return ApiSuccess;			
+}
+
+void AlazarClose(HANDLE h)
+{
+					
+}
+
+RETURN_CODE AlazarStartCapture(HANDLE h)
+{
+	return ApiSuccess;				
+}
+
+RETURN_CODE AlazarCloseAUTODma(HANDLE h)
+{
+	return ApiSuccess;				
+}
+
+RETURN_CODE  AlazarAbortAsyncRead(HANDLE hBoard)
+{
+	return ApiSuccess;
+}
+
+uint32_t AlazarTriggered(HANDLE board)
+{
+	return 1;
+}

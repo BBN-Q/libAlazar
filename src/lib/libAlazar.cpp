@@ -8,6 +8,8 @@
 #include <iostream>
 #include <sstream>
 #include <chrono>
+#include <list>
+#include <algorithm>
 
 
 #include "logger.h"
@@ -21,20 +23,267 @@ AlazarATS9870::AlazarATS9870()
     FILE_LOG(logDEBUG4) << "Constructing ... ";
     threadStop = false;
     threadRunning = false;
-    bufferLen = (int32_t)1e6;
+
 }
 
 AlazarATS9870::~AlazarATS9870()
 {
     FILE_LOG(logDEBUG4) << "Destructing ...";
+
+    RETURN_CODE retCode = AlazarCloseAUTODma(boardHandle);
+    if (retCode != ApiSuccess)
+	{
+        printError(retCode,__FILE__,__LINE__);
+	}
+
+    AlazarClose(boardHandle);
 }
+
+int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
+    const ConfigData_t *config, AcquisitionParams_t *acqParams)
+{
+    boardHandle = AlazarGetBoardBySystemID(systemId, boardId);
+    if (boardHandle == NULL)
+    {
+        FILE_LOG(logERROR) << "Open systemId " << systemId << " boardId "<<boardId<<" failed";
+        return -1;
+    }
+    
+    if( config->bufferSize > MAX_BUFFER_SIZE )
+    {
+        FILE_LOG(logERROR) << "MAX_BUFFER_SIZE Exceeded: " << config->bufferSize << " < " << MAX_BUFFER_SIZE;
+        return -1;
+        
+    }
+
+    //set averager mode or digitizer mode
+    averager = modeMap[config->acquireMode];
+
+    // set the sample rate parameters:
+    // SampleRateId is set to 1e9 and there is an external ref clock configured
+    // so the sample rate is 1e9/decimation; decimation factor has to be 1,2,4
+    // or any multiple of 10
+    uint32_t decimation = 1000000000/(uint32_t)config->samplingRate;
+	RETURN_CODE retCode =
+        AlazarSetCaptureClock(
+        	boardHandle,			  // HANDLE -- board handle
+        	EXTERNAL_CLOCK_10MHz_REF, // U32 -- clock source id
+        	1000000000,		          // U32 -- sample rate id - 1e9
+        	CLOCK_EDGE_RISING,	      // U32 -- clock edge id
+        	decimation			      // U32 -- clock decimation
+        	);
+	if (retCode != ApiSuccess)
+	{
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+	}
+
+    //set up the channel parameters for channel A
+    channelScale = config->verticalScale;
+    channelOffset = config->verticalOffset;
+    counts2Volts = 2*channelScale/256.0;
+    FILE_LOG(logDEBUG4) << "Input Range: " << channelScale << " ID: " << rangeIdMap[(uint32_t)(config->verticalScale*1000)];
+    FILE_LOG(logDEBUG4) << "Counts2Volts: " << counts2Volts;
+
+    retCode =
+        AlazarInputControl(
+            boardHandle,			// HANDLE -- board handle
+            CHANNEL_A,				// U8 -- input channel
+            couplingMap[config->verticalCoupling],			// U32 -- input coupling id
+            //TODO verify values for vertical scale
+            rangeIdMap[(uint32_t)(config->verticalScale*1000)],		// U32 -- input range id
+            IMPEDANCE_50_OHM		// U32 -- input impedance id
+            );
+    if (retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+    }
+
+    retCode =
+        AlazarSetBWLimit(
+            boardHandle,			// HANDLE -- board handle
+            CHANNEL_A,				// U8 -- channel identifier
+            bamdwithMap[config->bandwidth]	// U32 -- 0 = disable, 1 = enable
+            );
+    if (retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+    }
+
+    //set up the channel parameters for channel B
+    retCode =
+        AlazarInputControl(
+            boardHandle,			// HANDLE -- board handle
+            CHANNEL_B,				// U8 -- input channel
+            couplingMap[config->verticalCoupling],			// U32 -- input coupling id
+            rangeIdMap[(uint32_t)(config->verticalScale*1000)],		// U32 -- input range id
+            IMPEDANCE_50_OHM		// U32 -- input impedance id
+            );
+    if (retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+    }
+
+    retCode =
+        AlazarSetBWLimit(
+            boardHandle,			// HANDLE -- board handle
+            CHANNEL_B,				// U8 -- channel identifier
+            bamdwithMap[config->bandwidth]	// U32 -- 0 = disable, 1 = enable
+            );
+    if (retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+    }
+
+    // Select trigger inputs and levels as required
+    //trigLevelCode = uint8(128 + 127*(trigSettings.triggerLevel/1000/trigChannelRange));
+    //uint32_t = conf->triggerLevel
+    uint32_t trigChannelRange = 5;
+    uint32_t trigLevelCode = uint8_t(128 + 127*(config->triggerLevel/1000/trigChannelRange));
+    FILE_LOG(logDEBUG4) << "Trigger Level Code " << trigLevelCode;
+    retCode =
+        AlazarSetTriggerOperation(
+            boardHandle,			// HANDLE -- board handle
+            TRIG_ENGINE_OP_J,		// U32 -- trigger operation
+            TRIG_ENGINE_J,			// U32 -- trigger engine id
+            triggerSourceMap[config->triggerSource],			// U32 -- trigger source id
+            triggerSlopeMap[config->triggerSlope],	// U32 -- trigger slope id
+            trigLevelCode,					// U32 -- trigger level from 0 (-range) to 255 (+range)
+            TRIG_ENGINE_K,			// U32 -- trigger engine id
+            TRIG_DISABLE,			// U32 -- trigger source id for engine K
+            TRIGGER_SLOPE_POSITIVE,	// U32 -- trigger slope id
+            128						// U32 -- trigger level from 0 (-range) to 255 (+range)
+            );
+    if (retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+    }
+
+    //set up external triggerCoupling
+    //TODO - add channel based triggering
+    retCode =
+		AlazarSetExternalTrigger(
+			boardHandle,			// HANDLE -- board handle
+			couplingMap[config->triggerCoupling],			// U32 -- external trigger coupling id
+			ETR_5V					// U32 -- external trigger range id
+			);
+    if (retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+    }
+
+    //set the trigger delay in samples
+    uint32_t trigDelayPts = config->samplingRate * config->delay;
+    retCode = AlazarSetTriggerDelay(boardHandle, trigDelayPts);
+	if (retCode != ApiSuccess)
+	{
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+	}
+
+    //set timeout to 0 - don't time out waiting for a trigger
+    retCode =
+		AlazarSetTriggerTimeOut(
+			boardHandle,			// HANDLE -- board handle
+			0	// U32 -- timeout_sec / 10.e-6 (0 means wait forever)
+			);
+	if (retCode != ApiSuccess)
+	{
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
+	}
+
+
+    recordLength = config->recordLength;
+
+    if( recordLength < 256)
+    {
+        FILE_LOG(logERROR) << "recordLength less than 256" ;
+        return -1;
+    }
+
+    if( recordLength % 64 != 0)
+    {
+        FILE_LOG(logERROR) << "recordLength is not aligned on a 64 sample boundary" ;
+        return -1;
+    }
+
+    FILE_LOG(logINFO) << "recordLength: " << recordLength;
+    retCode = AlazarSetRecordSize(boardHandle,0,recordLength);
+    if( retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+    }
+
+
+    nbrSegments = config->nbrSegments;
+    nbrWaveforms = config->nbrWaveforms;
+    nbrRoundRobins = config->nbrRoundRobins;
+    bufferSize = config->bufferSize;
+    
+
+
+    //compute records per buffer and records per acquisition
+    getBufferSize();
+    
+    if( buffersPerRoundRobin > MAX_BUFFERS_PER_ROUND_ROBIN )
+    {
+        FILE_LOG(logERROR) << " Exeeded MAX_BUFFERS_PER_ROUND_ROBIN";
+        return(-1);
+    }
+
+    //The application uses this info allocate its channel data buffers
+    if( !partialBuffer )
+    {
+        if( averager )
+        {
+            acqParams->samplesPerAcquisition = recordLength*nbrSegments;
+        }
+        else
+        {
+            acqParams->samplesPerAcquisition = recordLength*nbrSegments*nbrWaveforms*roundRobinsPerBuffer;
+        }
+        acqParams->numberAcquistions = nbrBuffers;
+    }
+    else
+    {
+        if( averager )
+        {
+            acqParams->samplesPerAcquisition = recordLength*nbrSegments;
+        }
+        else
+        {
+            acqParams->samplesPerAcquisition = recordLength*nbrSegments*nbrWaveforms;
+        }
+        acqParams->numberAcquistions = nbrBuffers/buffersPerRoundRobin;
+
+    }
+    samplesPerAcquisition = acqParams->samplesPerAcquisition;
+    FILE_LOG(logINFO) << "samplesPerAcquisition: " << samplesPerAcquisition;
+    FILE_LOG(logINFO) << "numberAcquistions: " << acqParams->numberAcquistions;
+
+
+
+
+    return 0;
+}
+
 
 int32_t AlazarATS9870::rx( void)
 {
-    
+    RETURN_CODE retCode;
+    static uint32_t count=0;
+    FILE_LOG(logDEBUG4) << "STARTING RX THREAD" ;
+
     while( 1)
     {
-        int8_t *buff=NULL;
+        uint8_t *buff=NULL;
         while(!bufferQ.pop(buff))
         {
             if ( threadStop )
@@ -42,12 +291,32 @@ int32_t AlazarATS9870::rx( void)
                 return 0;
             }
         }
-        FILE_LOG(logDEBUG4) << "RX POPPED BUFFER " << std::hex << (int64_t)buff ;
-        //todo check error code
-        RETURN_CODE retCode = AlazarWaitAsyncBufferComplete(0,buff,0);
-        if( retCode != ApiSuccess)
+        //FILE_LOG(logDEBUG4) << "RX POPPED BUFFER " << std::hex << (int64_t)buff ;
+
+        using namespace std::chrono;
+        while(1)
         {
-            printError(retCode,__FILE__,__LINE__);
+
+            if( threadStop)
+            {
+                return 0;
+            }
+            retCode = AlazarWaitAsyncBufferComplete(boardHandle,buff,1000);//1 sec timeout
+            if( retCode == ApiWaitTimeout)
+            {
+                //FILE_LOG(logDEBUG4) << "AlazarWaitAsyncBufferComplete timedout";
+                continue;
+            }
+            else if( retCode == ApiSuccess)
+            {
+                FILE_LOG(logDEBUG4) << "GOT BUFFER " << count++ ;
+                break;
+            }
+            else
+            {
+                printError(retCode,__FILE__,__LINE__);
+                return -1;
+            }
         }
 
         while(!dataQ.push(buff))
@@ -56,37 +325,53 @@ int32_t AlazarATS9870::rx( void)
             {
                 return 0;
             }
-
         }
-        FILE_LOG(logDEBUG4) << "RX POSTING DATA " << std::hex << (int64_t)buff;
-
-
+        //FILE_LOG(logDEBUG4) << "RX POSTING DATA " << std::hex << (int64_t)buff;
         if( threadStop )
         {
             return 0;
         }
-
     }
-
-
     return 0;
-
 }
 
-void AlazarATS9870::rxThreadRun( void )
+int32_t AlazarATS9870::rxThreadRun( void )
 {
 
-    int8_t *buff=NULL;
-    for (int i = 0; i != MAX_NUM_BUFFERS; ++i)
+    RETURN_CODE retCode = AlazarBeforeAsyncRead(
+        boardHandle,
+        CHANNEL_A | CHANNEL_B,
+        0,
+        recordLength,
+        recordsPerBuffer,
+        recordsPerAcquisition,
+        //0x7FFFFFFF,
+        ADMA_NPT | ADMA_EXTERNAL_STARTCAPTURE | ADMA_INTERLEAVE_SAMPLES
+    );
+    if( retCode != ApiSuccess)
     {
-        buff= (int8_t *)malloc(bufferLen);
-        postBuffer(buff);
-
+        printError(retCode,__FILE__,__LINE__);
+        return -1;
     }
 
+    uint8_t *buff=NULL;
+    uint32_t nbrBuffersMaxMin = std::min(nbrBuffers,      (uint32_t)MAX_NUM_BUFFERS);
+    nbrBuffersMaxMin = std::max(nbrBuffersMaxMin,(uint32_t)MIN_NUM_BUFFERS);
+    for (uint32_t i = 0; i < nbrBuffersMaxMin; ++i)
+    {
+        buff= (uint8_t *)malloc(bufferLen);
+        postBuffer(buff);
+    }
+
+    retCode = AlazarStartCapture(boardHandle);
+    if( retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+    }
     rxThread = std::thread( &AlazarATS9870::rx, this );
-    FILE_LOG(logDEBUG4) << "STARTING RX THREAD" ;
     threadRunning = true;
+
+    return 0;
 
 }
 
@@ -97,20 +382,268 @@ void AlazarATS9870::rxThreadStop( void )
         threadStop = true;
         rxThread.join();
         threadRunning = false;
+
+        RETURN_CODE retCode = AlazarAbortAsyncRead(boardHandle);
+        if( retCode != ApiSuccess)
+        {
+            printError(retCode,__FILE__,__LINE__);
+        }
     }
+
     FILE_LOG(logDEBUG4) << "STOPPING RX THREAD" ;
     threadStop = false;
 }
-void AlazarATS9870::postBuffer( int8_t *buff)
+void AlazarATS9870::postBuffer( uint8_t *buff)
 {
     while (!bufferQ.push(buff));
-    RETURN_CODE retCode = AlazarPostAsyncBuffer(0,buff,bufferLen);
+    RETURN_CODE retCode = AlazarPostAsyncBuffer(boardHandle,buff,bufferLen);
+
     if( retCode != ApiSuccess)
     {
         printError(retCode,__FILE__,__LINE__);
     }
+    else
+    {
+        FILE_LOG(logDEBUG4) << "POSTED BUFFER " << std::hex << (int64_t)buff;
+    }
 
 }
+
+void AlazarATS9870::getBufferSize(void)
+{
+
+
+    //need to fit at least one record in a buffer
+    if( recordLength * numChannels > bufferSize )
+    {
+        FILE_LOG(logERROR) << "SINGLE RECORD TO LARGE FOR THE BUFFER";
+        exit(-1);
+    }
+
+    //Find the factors of the number of round robins.
+    //Each buffer will contain an integer number of round robins and the number
+    //of round robins will be divided equally amoung all of the buffers.
+    std::list<uint64_t> rrFactors;
+    for(uint64_t ii = 1; ii<=nbrRoundRobins; ii++) {
+        if(nbrRoundRobins % ii == 0) {
+            rrFactors.push_front(ii);
+        }
+    }
+
+    //find the maximum number of rr's that can fit in the buffer
+    roundRobinsPerBuffer=0;
+    for (std::list<uint64_t>::iterator rr=rrFactors.begin(); rr != rrFactors.end(); ++rr)
+    {
+        uint64_t bufferSizeTest = (uint64_t)recordLength * (uint64_t)nbrSegments * (uint64_t)nbrWaveforms * *rr * numChannels;
+        if ( bufferSizeTest <= bufferSize )
+        {
+            roundRobinsPerBuffer = *rr;
+            FILE_LOG(logINFO) << "roundRobinsPerBuffer: " << roundRobinsPerBuffer;
+            break;
+        }
+    }
+
+    // if test is 0 then the round robin needs to be divided evenly into an
+    // an integer number of buffers
+    if( roundRobinsPerBuffer >= 1)
+    {
+        //compute the buffer size
+        bufferLen = recordLength * nbrSegments * nbrWaveforms * roundRobinsPerBuffer * numChannels;
+        FILE_LOG(logINFO) << "bufferLen: " << bufferLen;
+
+        nbrBuffers = nbrRoundRobins/roundRobinsPerBuffer;
+        FILE_LOG(logINFO) << "nbrBuffers: " << nbrBuffers;
+
+        recordsPerBuffer = nbrSegments * nbrWaveforms * roundRobinsPerBuffer;
+        FILE_LOG(logINFO) << "recordsPerBuffer: " << recordsPerBuffer;
+
+        recordsPerAcquisition = recordsPerBuffer * nbrBuffers;
+        FILE_LOG(logINFO) << "recordsPerAcquisition: " << recordsPerAcquisition;
+
+        partialBuffer = false;
+        FILE_LOG(logINFO) << "partialBuffer: " << partialBuffer;
+
+        return;
+    }
+
+    // A round robin must be equally divided into buffers
+    // Factor the number of records per round robin.
+    // The number of records per buffer will be one of these factors
+    uint32_t recordsPerRoundRobin = nbrSegments*nbrWaveforms;
+    std::list<uint64_t> recFactors;
+    for(uint64_t ii = 1; ii<=recordsPerRoundRobin; ii++) {
+        if(recordsPerRoundRobin % ii == 0) {
+            recFactors.push_front(ii);
+        }
+    }
+
+    //Find the number of records that can come closest to the max buffer size
+    buffersPerRoundRobin = 0;
+    for (std::list<uint64_t>::iterator rec=recFactors.begin(); rec != recFactors.end(); ++rec)
+    {
+        uint64_t bufferSizeTest = (uint64_t)recordLength * *rec * (uint64_t)numChannels;
+        if ( bufferSizeTest <= bufferSize )
+        {
+            recordsPerBuffer = *rec;
+            FILE_LOG(logINFO) << "recordsPerBuffer: " << recordsPerBuffer;
+            break;
+        }
+    }
+
+    bufferLen = recordLength * recordsPerBuffer * numChannels;
+    FILE_LOG(logINFO) << "bufferLen: " << bufferLen;
+
+    recordsPerAcquisition = nbrSegments * nbrWaveforms * nbrRoundRobins;
+    FILE_LOG(logINFO) << "recordsPerAcquisition: " << recordsPerAcquisition;
+
+    nbrBuffers = recordsPerAcquisition/recordsPerBuffer;
+    FILE_LOG(logINFO) << "nbrBuffers: " << nbrBuffers;
+
+    partialBuffer = true;
+    FILE_LOG(logINFO) << "partialBuffer: " << partialBuffer;
+
+    buffersPerRoundRobin = nbrBuffers/nbrRoundRobins;
+    FILE_LOG(logINFO) << "buffersPerRoundRobin: " << buffersPerRoundRobin;
+    
+    return;
+}
+
+
+int32_t AlazarATS9870::processBuffer( uint8_t *buff, float *ch1, float *ch2)
+{
+
+    //accumulate the average in the application buffer which needs to 
+    //be cleared to start 
+    memset(ch1,0,sizeof(float)*samplesPerAcquisition);
+    memset(ch2,0,sizeof(float)*samplesPerAcquisition);
+    
+    if(averager)
+    {
+        // copy and sum along the 2nd and 4th dimension
+        uint32_t ni = recordLength;
+        uint32_t nj = nbrWaveforms;
+        uint32_t nk = nbrSegments;
+        uint32_t nl = roundRobinsPerBuffer;
+
+    	for (uint32_t l=0; l < nl; l++)
+        {
+            for (uint32_t k=0; k < nk ; k++)
+            {
+                for (uint32_t j=0; j < nj; j++)
+                {
+                    for (uint32_t i=0; i < ni ; i++)
+                    {
+                        //ch1 and ch2 samples are interleaved for faster transfer times
+                        ch1[i + k*ni] += counts2Volts*(buff[2*i     + j*2*ni + k*2*ni*nj + l*2*ni*nj*nk] - 128) - channelOffset;
+                        ch2[i + k*ni] += counts2Volts*(buff[2*i + 1 + j*2*ni + k*2*ni*nj + l*2*ni*nj*nk] - 128) - channelOffset;
+                    }
+                }
+            }
+        }
+        
+        float denom=nj*nl;
+        for( uint32_t i=0; i < ni*nk; i++)
+        {
+            ch1[i] /= denom;
+            ch2[i] /= denom;
+        }
+        
+    }
+    else // digitizer mode
+    {
+        for( uint32_t i=0; i < bufferLen/2; i++)
+        {
+            ch1[i] = counts2Volts*(buff[2*i] - 128)   - channelOffset;
+            ch2[i] = counts2Volts*(buff[2*i+1] - 128) - channelOffset;
+        }
+    }
+
+    return 1;
+    
+}
+
+int32_t AlazarATS9870::processPartialBuffer( uint8_t *buff, float *ch1, float *ch2)
+{
+    uint32_t partialIndex = bufferCounter % buffersPerRoundRobin;
+    FILE_LOG(logDEBUG4) << "PARTIAL INDEX " << partialIndex;
+    bufferCounter++;
+    
+
+    if( averager )
+    {
+        
+        //process the buff into the work buffer and if it is the last buffer
+        //in the round robin, run the averager
+        float *pCh1 = (float *)(ch1WorkBuff.data() + bufferLen*partialIndex/2);
+        float *pCh2 = (float *)(ch2WorkBuff.data() + bufferLen*partialIndex/2);
+        
+        for( uint32_t i=0; i < bufferLen/2; i++)
+        {
+            pCh1[i] = counts2Volts*(buff[2*i] - 128)   - channelOffset;
+            pCh2[i] = counts2Volts*(buff[2*i+1] - 128) - channelOffset;
+        }
+        
+        if( partialIndex == buffersPerRoundRobin - 1)
+        {
+            //accumulate the average in the application buffer which needs to 
+            //be cleared to start 
+            memset(ch1,0,sizeof(float)*samplesPerAcquisition);
+            memset(ch2,0,sizeof(float)*samplesPerAcquisition);
+            
+            uint32_t ni = recordLength;
+            uint32_t nj = nbrWaveforms;
+            uint32_t nk = nbrSegments;
+
+            //run the averager
+            for (uint32_t k=0; k < nk ; k++)
+            {
+                for (uint32_t j=0; j < nj; j++)
+                {
+                    for (uint32_t i=0; i < ni ; i++)
+                    {
+                        //ch1 and ch2 samples are interleaved for faster transfer times
+                        ch1[i + k*ni] += ch1WorkBuff[i + j*ni + k*ni*nj];
+                        ch2[i + k*ni] += ch2WorkBuff[i + j*ni + k*ni*nj];
+                    }
+                }
+            }
+            
+            float denom=nj;
+            for( uint32_t i=0; i < ni*nk; i++)
+            {
+                ch1[i] /= denom;
+                ch2[i] /= denom;
+            }
+        
+            
+        }        
+    }
+    else
+    {
+        float *pCh1 = (float *)(ch1 + bufferLen*partialIndex/2);
+        float *pCh2 = (float *)(ch2 + bufferLen*partialIndex/2);
+        
+        for( uint32_t i=0; i < bufferLen/2; i++)
+        {
+            pCh1[i] = counts2Volts*(buff[2*i] - 128)   - channelOffset;
+            pCh2[i] = counts2Volts*(buff[2*i+1] - 128) - channelOffset;
+        }
+        
+    }
+    
+    
+    if( partialIndex == buffersPerRoundRobin - 1)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+}
+
+
 
 void AlazarATS9870::printError(RETURN_CODE code, std::string file, int32_t line )
 {
@@ -120,11 +653,6 @@ void AlazarATS9870::printError(RETURN_CODE code, std::string file, int32_t line 
 
 int32_t AlazarATS9870::sysInfo()
 {
-    FILE_LOG(logDEBUG4) << "Constructing ... ";
-    threadStop = false;
-    threadRunning = false;
-    bufferLen = (int32_t)1e6;
-
     //log the sdk RevisionNumber
     uint8_t major,minor,rev;
     RETURN_CODE retCode = AlazarGetSDKVersion(&major,&minor,&rev);
@@ -310,8 +838,8 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId)
 
 	// Toggling the LED on the PCIe/PCIe mounting bracket of the board
 
-	int cycleCount = 10;
-	uint32_t cyclePeriod_ms = 2000;
+	int cycleCount = 2;
+	uint32_t cyclePeriod_ms = 200;
 
 	if (!FlashLed(handle, cycleCount, cyclePeriod_ms))
 		return -1;

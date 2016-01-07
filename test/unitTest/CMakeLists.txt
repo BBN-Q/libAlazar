@@ -33,6 +33,15 @@ TARGET_LINK_LIBRARIES(errorTest
 )
 
 
+#ADD_EXECUTABLE(atsPoll
+#	./AcqToDisk.cpp
+#)
+
+#TARGET_LINK_LIBRARIES(atsPoll
+#	Alazar
+#)
+
+
 
 
 install(TARGETS run_tests errorTest DESTINATION bin)

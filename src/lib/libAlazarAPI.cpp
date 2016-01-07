@@ -18,87 +18,94 @@ AlazarATS9870 *board1=NULL;
 
 #ifdef __cplusplus
 extern "C"{
-#endif    
+#endif
 
 int32_t connectBoard( const char* logFile )
-{    
+{
     FILE *pFile = stdout;
-    
+
     if (logFile)
     {
-        pFile = fopen(logFile, "a"); 
+        pFile = fopen(logFile, "a");
     }
-    
-    Output2FILE::Stream() = pFile;    
+
+    Output2FILE::Stream() = pFile;
     FILE_LOG(logINFO) << "libAlazar Rev "<<std::string(VERSION);
-   
-    
-    board1 = new AlazarATS9870;   
-    board1->sysInfo(); 
+
+
+    board1 = new AlazarATS9870();
+    board1->sysInfo();
 
     return(0);
 
 }
 
-int32_t setAll(ConfigData_t config)
+int32_t setAll(uint32_t systemId, uint32_t boardId, const ConfigData_t *config,
+    AcquisitionParams_t *acqParams)
 {
     if( !board1 )
     {
         return(-1);
     }
-    
-    FILE_LOG(logDEBUG4) << "CONFIG address " << config.address ;
-    
-    return 0;
+
+    int32_t ret = board1->ConfigureBoard(systemId, boardId, config, acqParams);
+
+    return ret;
 }
 
 int32_t acquire(void)
 {
-    
+    int32_t ret=0;
+
     if( !board1 )
     {
         return(-1);
     }
-    
+
     if( board1->threadRunning )
     {
         return(-1);
     }
-    
-    board1->rxThreadRun();   
- 
-    return 0;
+
+    ret = board1->rxThreadRun();
+
+    return ret;
 }
 
-int32_t wait_for_acquisition(void)
+int32_t wait_for_acquisition(float *ch1, float *ch2)
 {
     if( !board1 )
     {
         return(-1);
     }
-    
+
     //wait for a buffer to be ready
-    int8_t *buff;
+    uint8_t *buff;
     if(!board1->dataQ.pop(buff))
     {
         return 0;
     }
+
     FILE_LOG(logDEBUG4) << "API POPPING DATA " << std::hex << (int64_t)buff ;
-    board1->bufferCounter++;
-    
-    //do stuff with it
-    
-    
-    //return the buffer
-    FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex << (int64_t)buff ;
+
+    // if there are multiple buffers per roundrobin the partial index logic
+    // is used to process the data from the individual buffers into one
+    // application channel buffer
+    int32_t ret=0;
+    if (board1->partialBuffer)
+    {
+        ret = board1->processPartialBuffer(buff, ch1, ch2);
+    }
+    else
+    {
+        ret = board1->processBuffer(buff, ch1, ch2);        
+    }
+
     board1->postBuffer(buff);
+    FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex << (int64_t)buff ;
 
-
-
-
+    return(ret);
     
-    
-    return 0;
 }
 
 int32_t stop()
@@ -107,9 +114,9 @@ int32_t stop()
     {
         return(-1);
     }
-    
+
     board1->rxThreadStop();
-    
+
 
     return 0;
 }
@@ -120,16 +127,16 @@ int32_t disconnect(void)
     {
         return(-1);
     }
-    
+
     if( board1->threadRunning)
     {
         stop();
     }
-    
+
     delete board1;
     board1 = NULL;
     return 0;
-    
+
 }
 
 int32_t transfer_waveform(void)

@@ -9,7 +9,6 @@
 extern "C" {
 #endif
 
-#define MAX_NUM_BUFFERS 32
 
 
 #ifdef __cplusplus
