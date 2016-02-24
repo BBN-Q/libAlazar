@@ -14,7 +14,7 @@
 
 #include "logger.h"
 #include "libAlazar.h"
-#include "libAlazarApi.h"
+#include "libAlazarAPI.h"
 
 using namespace std;
 
@@ -42,6 +42,21 @@ AlazarATS9870::~AlazarATS9870()
 int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     const ConfigData_t *config, AcquisitionParams_t *acqParams)
 {
+    
+    if( config == NULL)
+    {
+        FILE_LOG(logERROR) << "NULL Pointer to Config Params ";
+        return -1;
+        
+    }
+    
+    if( acqParams == NULL)
+    {
+        FILE_LOG(logERROR) << "NULL Pointer to Acq Params ";
+        return -1;
+        
+    }
+    
     boardHandle = AlazarGetBoardBySystemID(systemId, boardId);
     if (boardHandle == NULL)
     {
@@ -57,6 +72,12 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     }
 
     //set averager mode or digitizer mode
+    const char* acquireModeKey= config->acquireMode;
+    if( modeMap.find(acquireModeKey) == modeMap.end() )
+    {
+        FILE_LOG(logERROR) << "Invalid Mode: " <<  acquireModeKey;     
+        return(-1);
+    }    
     averager = modeMap[config->acquireMode];
 
     // set the sample rate parameters:
@@ -64,6 +85,16 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     // so the sample rate is 1e9/decimation; decimation factor has to be 1,2,4
     // or any multiple of 10
     uint32_t decimation = 1000000000/(uint32_t)config->samplingRate;
+    FILE_LOG(logINFO) << "Decimation " << decimation;  
+    if(decimation != 1 && decimation != 2 && decimation != 4)
+    {
+        if(decimation%10 != 0)
+        {
+            FILE_LOG(logERROR) << "Decimation is not a Mulitple of 2,4,or 10 ";  
+            return(-1);                       
+        }
+    }
+    
 	RETURN_CODE retCode =
         AlazarSetCaptureClock(
         	boardHandle,			  // HANDLE -- board handle
@@ -82,16 +113,31 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     channelScale = config->verticalScale;
     channelOffset = config->verticalOffset;
     counts2Volts = 2*channelScale/256.0;
-    FILE_LOG(logDEBUG4) << "Input Range: " << channelScale << " ID: " << rangeIdMap[(uint32_t)(config->verticalScale*1000)];
-    FILE_LOG(logDEBUG4) << "Counts2Volts: " << counts2Volts;
+    
+    uint32_t rangeIDKey= (uint32_t)(config->verticalScale*1000);
+    if( rangeIdMap.find(rangeIDKey) == rangeIdMap.end() )
+    {
+        FILE_LOG(logERROR) << "Invalid Channel Scale: " <<  rangeIDKey;     
+        return(-1);
+    }
+    
+    const char* couplingKey= config->verticalCoupling;
+    if( couplingMap.find(couplingKey) == couplingMap.end() )
+    {
+        FILE_LOG(logERROR) << "Invalid Channel Coupling: " <<  couplingKey;     
+        return(-1);
+    }
+    
+    FILE_LOG(logINFO) << "Input Range: " << channelScale << " ID: " << rangeIdMap[rangeIDKey];
+    FILE_LOG(logINFO) << "Counts2Volts: " << counts2Volts;
 
     retCode =
         AlazarInputControl(
             boardHandle,			// HANDLE -- board handle
             CHANNEL_A,				// U8 -- input channel
-            couplingMap[config->verticalCoupling],			// U32 -- input coupling id
+            couplingMap[couplingKey],	// U32 -- input coupling id
             //TODO verify values for vertical scale
-            rangeIdMap[(uint32_t)(config->verticalScale*1000)],		// U32 -- input range id
+            rangeIdMap[rangeIDKey],		// U32 -- input range id
             IMPEDANCE_50_OHM		// U32 -- input impedance id
             );
     if (retCode != ApiSuccess)
@@ -100,6 +146,12 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
         return -1;
     }
 
+    const char* bamdwithKey= config->bandwidth;
+    if( bamdwithMap.find(bamdwithKey) == bamdwithMap.end() )
+    {
+        FILE_LOG(logERROR) << "Invalid Mode: " <<  bamdwithKey;     
+        return(-1);
+    }    
     retCode =
         AlazarSetBWLimit(
             boardHandle,			// HANDLE -- board handle
@@ -144,7 +196,22 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     //uint32_t = conf->triggerLevel
     uint32_t trigChannelRange = 5;
     uint32_t trigLevelCode = uint8_t(128 + 127*(config->triggerLevel/1000/trigChannelRange));
-    FILE_LOG(logDEBUG4) << "Trigger Level Code " << trigLevelCode;
+    FILE_LOG(logINFO) << "Trigger Level Code " << trigLevelCode;
+    
+    const char* triggerSourceKey= config->triggerSource;
+    if( triggerSourceMap.find(triggerSourceKey) == triggerSourceMap.end() )
+    {
+        FILE_LOG(logERROR) << "Invalid Trigger Source ID: " <<  triggerSourceKey;     
+        return(-1);
+    }
+    
+    const char* triggerSlopeMapKey= config->triggerSlope;
+    if( triggerSlopeMap.find(triggerSlopeMapKey) == triggerSlopeMap.end() )
+    {
+        FILE_LOG(logERROR) << "Invalid Trigger Coupling: " <<  triggerSlopeMapKey;     
+        return(-1);
+    }
+
     retCode =
         AlazarSetTriggerOperation(
             boardHandle,			// HANDLE -- board handle
@@ -166,6 +233,13 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
 
     //set up external triggerCoupling
     //TODO - add channel based triggering
+    couplingKey= config->triggerCoupling;
+    if( couplingMap.find(couplingKey) == couplingMap.end() )
+    {
+        FILE_LOG(logERROR) << "Invalid Trigger Coupling: " <<  couplingKey;     
+        return(-1);
+    }
+
     retCode =
 		AlazarSetExternalTrigger(
 			boardHandle,			// HANDLE -- board handle
@@ -180,6 +254,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
 
     //set the trigger delay in samples
     uint32_t trigDelayPts = config->samplingRate * config->delay;
+    FILE_LOG(logINFO) << "Trigger Delay " << trigDelayPts;
     retCode = AlazarSetTriggerDelay(boardHandle, trigDelayPts);
 	if (retCode != ApiSuccess)
 	{
@@ -226,18 +301,16 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     nbrWaveforms = config->nbrWaveforms;
     nbrRoundRobins = config->nbrRoundRobins;
     bufferSize = config->bufferSize;
+    FILE_LOG(logINFO) << "allocated bufferSize: " << bufferSize;
     
 
 
     //compute records per buffer and records per acquisition
-    getBufferSize();
-    
-    if( buffersPerRoundRobin > MAX_BUFFERS_PER_ROUND_ROBIN )
+    if( getBufferSize() < 0 )
     {
-        FILE_LOG(logERROR) << " Exeeded MAX_BUFFERS_PER_ROUND_ROBIN";
         return(-1);
     }
-
+    
     //The application uses this info allocate its channel data buffers
     if( !partialBuffer )
     {
@@ -278,7 +351,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
 int32_t AlazarATS9870::rx( void)
 {
     RETURN_CODE retCode;
-    static uint32_t count=0;
+    uint32_t count=0;
     FILE_LOG(logDEBUG4) << "STARTING RX THREAD" ;
 
     while( 1)
@@ -409,7 +482,7 @@ void AlazarATS9870::postBuffer( uint8_t *buff)
 
 }
 
-void AlazarATS9870::getBufferSize(void)
+int32_t AlazarATS9870::getBufferSize(void)
 {
 
 
@@ -417,7 +490,7 @@ void AlazarATS9870::getBufferSize(void)
     if( recordLength * numChannels > bufferSize )
     {
         FILE_LOG(logERROR) << "SINGLE RECORD TO LARGE FOR THE BUFFER";
-        exit(-1);
+        return(-1);
     }
 
     //Find the factors of the number of round robins.
@@ -463,7 +536,7 @@ void AlazarATS9870::getBufferSize(void)
         partialBuffer = false;
         FILE_LOG(logINFO) << "partialBuffer: " << partialBuffer;
 
-        return;
+        return(0);
     }
 
     // A round robin must be equally divided into buffers
@@ -505,7 +578,13 @@ void AlazarATS9870::getBufferSize(void)
     buffersPerRoundRobin = nbrBuffers/nbrRoundRobins;
     FILE_LOG(logINFO) << "buffersPerRoundRobin: " << buffersPerRoundRobin;
     
-    return;
+    if( buffersPerRoundRobin*recordsPerBuffer > MAX_WORK_BUFFER_SIZE )
+    {
+        FILE_LOG(logERROR) << " Exeeded MAX_BUFFERS_PER_ROUND_ROBIN";
+        return(-1);
+    }
+
+    return(0);
 }
 
 

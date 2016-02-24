@@ -17,6 +17,10 @@
 
 inline std::string NowTime();
 
+#ifndef LOG_LEVEL
+    #define LOG_LEVEL 2
+#endif
+
 enum TLogLevel {logERROR, logWARNING, logINFO, logDEBUG, logDEBUG1, logDEBUG2, logDEBUG3, logDEBUG4};
 
 template <typename T>
@@ -61,7 +65,7 @@ Log<T>::~Log()
 template <typename T>
 TLogLevel& Log<T>::ReportingLevel()
 {
-    static TLogLevel reportingLevel = logDEBUG4;
+    static TLogLevel reportingLevel = static_cast<TLogLevel>(LOG_LEVEL);
     return reportingLevel;
 }
 

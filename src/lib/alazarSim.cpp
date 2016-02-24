@@ -19,6 +19,8 @@ uint32_t recordSize;
 uint32_t bufferLenBytes;
 uint32_t samplesPerRecord;
 uint32_t testCyclesPerRecord = 1;
+uint32_t recordCounter=0;
+
 
 RETURN_CODE AlazarPostAsyncBuffer (
 	HANDLE  hDevice,
@@ -38,16 +40,24 @@ RETURN_CODE AlazarPostAsyncBuffer (
 RETURN_CODE  AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
                                                  U32 uTimeout_ms)
 {
-    int8_t *temp;
+	
+	int8_t *temp;
     while(!bufferQ.pop(temp));
     if( temp == pBuffer)
     {
-		
 		//fill in with some dummy data
-		for( uint32_t i=0; i < bufferLenBytes/2; i++)
+		for( uint32_t i=0; i < (bufferLenBytes/2)/samplesPerRecord; i++)
 		{
-			temp[2*i]   = (int8_t)(cosf(2*M_PI*i*(float)testCyclesPerRecord/samplesPerRecord)*127) + 128;
-			temp[2*i+1] = (int8_t)(sinf(2*M_PI*i*(float)testCyclesPerRecord/samplesPerRecord)*127) + 128;
+			//temp[2*i]   = (int8_t)(cosf(2*M_PI*i*(float)testCyclesPerRecord/samplesPerRecord)*127) + 128;
+			//temp[2*i+1] = (int8_t)(sinf(2*M_PI*i*(float)testCyclesPerRecord/samplesPerRecord)*127) + 128;
+			int8_t value = (uint8_t)(recordCounter%256);
+			for( uint32_t j=0; j < samplesPerRecord; j++)
+			{
+				temp[2*j + 2*i*samplesPerRecord]   = value;
+				temp[2*j+1 + 2*i*samplesPerRecord] = value+1;
+			}
+			recordCounter++;
+			
 		}
 
         return ApiSuccess;
@@ -327,6 +337,7 @@ RETURN_CODE AlazarBeforeAsyncRead(HANDLE hBoard, U32 uChannelSelect,
                           U32 uFlags)
 {
 	
+	recordCounter = 0;
 	samplesPerRecord = uSamplesPerRecord;
 	return ApiSuccess;			
 }

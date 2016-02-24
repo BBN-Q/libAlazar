@@ -20,7 +20,7 @@
 #define MAX_NUM_BUFFERS 32
 #define MIN_NUM_BUFFERS  2
 #define MAX_BUFFER_SIZE 0x400000 // 4M
-#define MAX_BUFFERS_PER_ROUND_ROBIN 4
+#define MAX_WORK_BUFFER_SIZE 0x400000 // 4M
 
 class AlazarATS9870
 {
@@ -41,8 +41,9 @@ class AlazarATS9870
         
         //this working buffer is used for the partial buffer logic when a round
         //robin is distributed over multiple buffers
-        std::array<float, MAX_BUFFER_SIZE*MAX_BUFFERS_PER_ROUND_ROBIN> ch1WorkBuff;
-        std::array<float, MAX_BUFFER_SIZE*MAX_BUFFERS_PER_ROUND_ROBIN> ch2WorkBuff;
+        
+        std::array<float, MAX_WORK_BUFFER_SIZE> ch1WorkBuff;
+        std::array<float, MAX_WORK_BUFFER_SIZE> ch2WorkBuff;
 
         bool averager;
 
@@ -89,7 +90,7 @@ class AlazarATS9870
 
         std::string BoardTypeToText(int boardType);
         int32_t rx( void );
-        void getBufferSize(void);
+        int32_t getBufferSize(void);
 
         //map mV input scale to RangeId
         float channelScale;

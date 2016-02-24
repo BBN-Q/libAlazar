@@ -4,10 +4,14 @@
 #include <string>
 #include <iostream>
 #include <chrono>
+#include <boost/program_options.hpp>
+#include <boost/program_options/variables_map.hpp>
 
 #include "libAlazarAPI.h"
 #include "logger.h"
 #include "libAlazarConfig.h"
+
+using namespace boost::program_options;
 
 void waitForQuit( void )
 {
@@ -31,8 +35,40 @@ void waitForQuit( void )
 
 int main( int argc, char *argv[])
 {
+    
+    variables_map vm;
+    try
+    {   
+      options_description desc{"Options"};
+      desc.add_options()
+        ("help,h", "Help screen")
+        ("mode", value<std::string>()->default_value("averager"), "acquire Mode")
+        ("segments", value<uint32_t>()->default_value(1), "number of segments")
+        ("waveforms", value<uint32_t>()->default_value(1), "number of waveforms")
+        ("roundrobins", value<uint32_t>()->default_value(1), "number of roundrobins")
+        ("recordlength", value<uint32_t>()->default_value(4096), "record length")
+        ("buffer", value<uint32_t>()->default_value(4096*2), "buffer size")
+        ("samplingRate", value<float>()->default_value(500e6), "sample rate");
+
+      store(parse_command_line(argc, argv, desc), vm);
+      notify(vm);
+
+      if (vm.count("help"))
+      {
+          std::cout << desc << '\n';
+          exit(0);
+      }
+      
+    }
+    catch (const error &ex)
+    {
+      std::cerr << ex.what() << '\n';
+    }
+
+    
+    
     //todo - make parameters user configurable
-    const ConfigData_t config =
+    ConfigData_t config =
     {
         "averager",  //acquire mode - "digitizer" or "averager"
         "Full",       //bandwidth - "Full" or "20MHz"
@@ -42,7 +78,7 @@ int main( int argc, char *argv[])
         "myAlazar", //instrument label
         4096, //segmentLength - must be greater than 256 and a multiple of 16
         1, // number of segments
-        4, // number of waveforms
+        1, // number of waveforms
         1, // number of round robins
         500e6, // sample rate
         "DC", // trigger coupling - "AC" or "DC"
@@ -55,6 +91,15 @@ int main( int argc, char *argv[])
         4096*2, // max buffer size
     };
 
+    config.acquireMode     = vm["mode"].as<std::string>().c_str();
+    config.recordLength    = vm["recordlength"].as<uint32_t>();
+    config.nbrSegments     = vm["segments"].as<uint32_t>();
+    config.nbrWaveforms    = vm["waveforms"].as<uint32_t>();
+    config.nbrRoundRobins  = vm["roundrobins"].as<uint32_t>();
+    config.bufferSize      = vm["buffer"].as<uint32_t>();
+    config.samplingRate      = vm["samplingRate"].as<float>();
+
+    
     AcquisitionParams_t acqParams;
 
     //this is a hack because because MSYS2 does not handle

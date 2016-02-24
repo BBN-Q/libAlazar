@@ -79,6 +79,18 @@ int32_t wait_for_acquisition(float *ch1, float *ch2)
         return(-1);
     }
 
+    if( ch1 == NULL)
+    {
+        FILE_LOG(logERROR) << "NULL Pointer to Ch1";    
+        return(-1);
+    }
+
+    if( ch2 == NULL)
+    {
+        FILE_LOG(logERROR) << "NULL Pointer to Ch2";       
+        return(-1);     
+    }
+
     //wait for a buffer to be ready
     uint8_t *buff;
     if(!board1->dataQ.pop(buff))
