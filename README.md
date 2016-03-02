@@ -1,5 +1,10 @@
 [libAlazar wiki](https://qiplab.bbn.com/BUQ-Lab/libAlazar/wikis/home)
 
+# Build Status
+______________
+[![develop status](https://qiplab.bbn.com/ci/projects/4/status.png?ref=develop)](https://qiplab.bbn.com/ci/projects/4?ref=develop)
+[![rjmwork status](https://qiplab.bbn.com/ci/projects/4/status.png?ref=rjmwork)](https://qiplab.bbn.com/ci/projects/4?ref=rjmwork)
+
 
 # Build Instructions
 _____________

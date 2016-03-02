@@ -1,0 +1,29 @@
+ubuntuBuild:
+    script: 
+        - mkdir build
+        - cd build
+        - cmake -DSIM=true ../
+        - sh ../src/lib/version.sh > ../src/lib/version.h
+        - make clean install
+        - export LD_LIBRARY_PATH=./bin
+        - cd ../src/python 
+        - which python
+        - python apiTest.py 
+        - cd ../../build
+    #artifacts:
+    #    - bin/*.so
+
+    tags:
+        - ubuntu
+        
+windowsBuild:    
+    script:
+        - mkdir build
+        - cd build
+        - cmake -G "MSYS Makefiles" ../
+        - sh ../src/lib/version.sh > ../src/lib/version.h
+        - make clean install
+    tags:
+        - windows
+    #artifacts:
+    #    - bin/*.dll

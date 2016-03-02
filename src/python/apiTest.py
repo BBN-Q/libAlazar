@@ -242,7 +242,7 @@ class TestAPI(MyUnitTest):
         self.assertEqual(ret,-1)   
         
     def test_trigger_source(self):
-        logFile = self.test_trigger_coupling.__name__+'.log'
+        logFile = self.test_trigger_source.__name__+'.log'
         self.connect(logFile)
         self.config['triggerSource'] = 'ext'
         ret = self.lib.setAll(1,1,self.config)
@@ -250,7 +250,7 @@ class TestAPI(MyUnitTest):
         self.assertEqual(ret,-1)   
         
     def test_trigger_slope(self):
-        logFile = self.test_trigger_coupling.__name__+'.log'
+        logFile = self.test_trigger_slope.__name__+'.log'
         self.connect(logFile)
         self.config['triggerSource'] = 'rising'
         ret = self.lib.setAll(1,1,self.config)
@@ -258,7 +258,7 @@ class TestAPI(MyUnitTest):
         self.assertEqual(ret,-1)   
         
     def test_trigger_bandwidth(self):
-        logFile = self.test_trigger_coupling.__name__+'.log'
+        logFile = self.test_trigger_bandwidth.__name__+'.log'
         self.connect(logFile)
         self.config['bandwidth'] = ''
         ret = self.lib.setAll(1,1,self.config)
@@ -383,6 +383,6 @@ class TestAPI(MyUnitTest):
         self.compareData()
         
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestAPI)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-    #unittest.main()
+    #suite = unittest.TestLoader().loadTestsFromTestCase(TestAPI)
+    #unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main(verbosity=True)
