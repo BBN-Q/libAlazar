@@ -21,23 +21,27 @@ add_custom_command(TARGET Alazar
 				   )
 
 #Some compile flags
-ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread -fPIC")
+if(WIN32)
+    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread ")
+else()
+    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread -fPIC")
+endif()
 
 #used by runTests.cpp for command line options
-find_package(Boost 1.45.0 COMPONENTS program_options) 
+find_package(Boost 1.45.0 COMPONENTS program_options)
 
 
 if(SIM)
 	#an alazar simulator is used for testing purposes
 	ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
-	
+
 	TARGET_LINK_LIBRARIES(Alazar
 		AlazarSim
-)
+    )
 else()
 	TARGET_LINK_LIBRARIES(Alazar
 		/c/windows/system32/ATSApi.dll
-)
+    )
 endif()
 
 
