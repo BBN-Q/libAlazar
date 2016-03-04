@@ -16,7 +16,25 @@ ubuntuBuild:
     tags:
         - ubuntu
         
-windowsBuild:    
+windowsAPITest:    
+
+    script:
+        - mkdir build
+        - cd build
+        - cmake -G "MSYS Makefiles" -DSIM=true ../
+        - sh ../src/lib/version.sh > ../src/lib/version.h
+        - make clean install
+        - cd ../src/python 
+        - which python
+        - python apiTest.py 
+        - cd ../../build
+    tags:
+        - windows
+    #artifacts:
+    #    - bin/*.dll
+    
+windowsDLLBuild:    
+
     script:
         - mkdir build
         - cd build
@@ -25,5 +43,3 @@ windowsBuild:
         - make clean install
     tags:
         - windows
-    #artifacts:
-    #    - bin/*.dll
