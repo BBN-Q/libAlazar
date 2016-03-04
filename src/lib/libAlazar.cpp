@@ -42,42 +42,42 @@ AlazarATS9870::~AlazarATS9870()
 int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     const ConfigData_t *config, AcquisitionParams_t *acqParams)
 {
-    
+
     if( config == NULL)
     {
         FILE_LOG(logERROR) << "NULL Pointer to Config Params ";
         return -1;
-        
+
     }
-    
+
     if( acqParams == NULL)
     {
         FILE_LOG(logERROR) << "NULL Pointer to Acq Params ";
         return -1;
-        
+
     }
-    
+
     boardHandle = AlazarGetBoardBySystemID(systemId, boardId);
     if (boardHandle == NULL)
     {
         FILE_LOG(logERROR) << "Open systemId " << systemId << " boardId "<<boardId<<" failed";
         return -1;
     }
-    
+
     if( config->bufferSize > MAX_BUFFER_SIZE )
     {
         FILE_LOG(logERROR) << "MAX_BUFFER_SIZE Exceeded: " << config->bufferSize << " < " << MAX_BUFFER_SIZE;
         return -1;
-        
+
     }
 
     //set averager mode or digitizer mode
     const char* acquireModeKey= config->acquireMode;
     if( modeMap.find(acquireModeKey) == modeMap.end() )
     {
-        FILE_LOG(logERROR) << "Invalid Mode: " <<  acquireModeKey;     
+        FILE_LOG(logERROR) << "Invalid Mode: " <<  acquireModeKey;
         return(-1);
-    }    
+    }
     averager = modeMap[config->acquireMode];
 
     // set the sample rate parameters:
@@ -85,16 +85,16 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     // so the sample rate is 1e9/decimation; decimation factor has to be 1,2,4
     // or any multiple of 10
     uint32_t decimation = 1000000000/(uint32_t)config->samplingRate;
-    FILE_LOG(logINFO) << "Decimation " << decimation;  
+    FILE_LOG(logINFO) << "Decimation " << decimation;
     if(decimation != 1 && decimation != 2 && decimation != 4)
     {
         if(decimation%10 != 0)
         {
-            FILE_LOG(logERROR) << "Decimation is not a Mulitple of 2,4,or 10 ";  
-            return(-1);                       
+            FILE_LOG(logERROR) << "Decimation is not a Mulitple of 2,4,or 10 ";
+            return(-1);
         }
     }
-    
+
 	RETURN_CODE retCode =
         AlazarSetCaptureClock(
         	boardHandle,			  // HANDLE -- board handle
@@ -113,21 +113,21 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     channelScale = config->verticalScale;
     channelOffset = config->verticalOffset;
     counts2Volts = 2*channelScale/256.0;
-    
+
     uint32_t rangeIDKey= (uint32_t)(config->verticalScale*1000);
     if( rangeIdMap.find(rangeIDKey) == rangeIdMap.end() )
     {
-        FILE_LOG(logERROR) << "Invalid Channel Scale: " <<  rangeIDKey;     
+        FILE_LOG(logERROR) << "Invalid Channel Scale: " <<  rangeIDKey;
         return(-1);
     }
-    
+
     const char* couplingKey= config->verticalCoupling;
     if( couplingMap.find(couplingKey) == couplingMap.end() )
     {
-        FILE_LOG(logERROR) << "Invalid Channel Coupling: " <<  couplingKey;     
+        FILE_LOG(logERROR) << "Invalid Channel Coupling: " <<  couplingKey;
         return(-1);
     }
-    
+
     FILE_LOG(logINFO) << "Input Range: " << channelScale << " ID: " << rangeIdMap[rangeIDKey];
     FILE_LOG(logINFO) << "Counts2Volts: " << counts2Volts;
 
@@ -149,9 +149,9 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     const char* bamdwithKey= config->bandwidth;
     if( bamdwithMap.find(bamdwithKey) == bamdwithMap.end() )
     {
-        FILE_LOG(logERROR) << "Invalid Mode: " <<  bamdwithKey;     
+        FILE_LOG(logERROR) << "Invalid Mode: " <<  bamdwithKey;
         return(-1);
-    }    
+    }
     retCode =
         AlazarSetBWLimit(
             boardHandle,			// HANDLE -- board handle
@@ -197,18 +197,18 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     uint32_t trigChannelRange = 5;
     uint32_t trigLevelCode = uint8_t(128 + 127*(config->triggerLevel/1000/trigChannelRange));
     FILE_LOG(logINFO) << "Trigger Level Code " << trigLevelCode;
-    
+
     const char* triggerSourceKey= config->triggerSource;
     if( triggerSourceMap.find(triggerSourceKey) == triggerSourceMap.end() )
     {
-        FILE_LOG(logERROR) << "Invalid Trigger Source ID: " <<  triggerSourceKey;     
+        FILE_LOG(logERROR) << "Invalid Trigger Source ID: " <<  triggerSourceKey;
         return(-1);
     }
-    
+
     const char* triggerSlopeMapKey= config->triggerSlope;
     if( triggerSlopeMap.find(triggerSlopeMapKey) == triggerSlopeMap.end() )
     {
-        FILE_LOG(logERROR) << "Invalid Trigger Coupling: " <<  triggerSlopeMapKey;     
+        FILE_LOG(logERROR) << "Invalid Trigger Coupling: " <<  triggerSlopeMapKey;
         return(-1);
     }
 
@@ -236,7 +236,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     couplingKey= config->triggerCoupling;
     if( couplingMap.find(couplingKey) == couplingMap.end() )
     {
-        FILE_LOG(logERROR) << "Invalid Trigger Coupling: " <<  couplingKey;     
+        FILE_LOG(logERROR) << "Invalid Trigger Coupling: " <<  couplingKey;
         return(-1);
     }
 
@@ -302,7 +302,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     nbrRoundRobins = config->nbrRoundRobins;
     bufferSize = config->bufferSize;
     FILE_LOG(logINFO) << "allocated bufferSize: " << bufferSize;
-    
+
 
 
     //compute records per buffer and records per acquisition
@@ -310,7 +310,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     {
         return(-1);
     }
-    
+
     //The application uses this info allocate its channel data buffers
     if( !partialBuffer )
     {
@@ -466,7 +466,8 @@ void AlazarATS9870::rxThreadStop( void )
     FILE_LOG(logDEBUG4) << "STOPPING RX THREAD" ;
     threadStop = false;
 }
-void AlazarATS9870::postBuffer( uint8_t *buff)
+
+int32_t AlazarATS9870::postBuffer( uint8_t *buff)
 {
     while (!bufferQ.push(buff));
     RETURN_CODE retCode = AlazarPostAsyncBuffer(boardHandle,buff,bufferLen);
@@ -474,11 +475,14 @@ void AlazarATS9870::postBuffer( uint8_t *buff)
     if( retCode != ApiSuccess)
     {
         printError(retCode,__FILE__,__LINE__);
+        return(-1);
     }
     else
     {
         FILE_LOG(logDEBUG4) << "POSTED BUFFER " << std::hex << (int64_t)buff;
     }
+
+    return(0);
 
 }
 
@@ -577,10 +581,10 @@ int32_t AlazarATS9870::getBufferSize(void)
 
     buffersPerRoundRobin = nbrBuffers/nbrRoundRobins;
     FILE_LOG(logINFO) << "buffersPerRoundRobin: " << buffersPerRoundRobin;
-    
-    if( buffersPerRoundRobin*recordsPerBuffer > MAX_WORK_BUFFER_SIZE )
+
+    if( buffersPerRoundRobin*recordsPerBuffer*recordLength > MAX_WORK_BUFFER_SIZE )
     {
-        FILE_LOG(logERROR) << " Exeeded MAX_BUFFERS_PER_ROUND_ROBIN";
+        FILE_LOG(logERROR) << " Exeeded MAX_WORK_BUFFER_SIZE";
         return(-1);
     }
 
@@ -591,11 +595,11 @@ int32_t AlazarATS9870::getBufferSize(void)
 int32_t AlazarATS9870::processBuffer( uint8_t *buff, float *ch1, float *ch2)
 {
 
-    //accumulate the average in the application buffer which needs to 
-    //be cleared to start 
+    //accumulate the average in the application buffer which needs to
+    //be cleared to start
     memset(ch1,0,sizeof(float)*samplesPerAcquisition);
     memset(ch2,0,sizeof(float)*samplesPerAcquisition);
-    
+
     if(averager)
     {
         // copy and sum along the 2nd and 4th dimension
@@ -619,14 +623,13 @@ int32_t AlazarATS9870::processBuffer( uint8_t *buff, float *ch1, float *ch2)
                 }
             }
         }
-        
+
         float denom=nj*nl;
         for( uint32_t i=0; i < ni*nk; i++)
         {
             ch1[i] /= denom;
             ch2[i] /= denom;
         }
-        
     }
     else // digitizer mode
     {
@@ -638,7 +641,7 @@ int32_t AlazarATS9870::processBuffer( uint8_t *buff, float *ch1, float *ch2)
     }
 
     return 1;
-    
+
 }
 
 int32_t AlazarATS9870::processPartialBuffer( uint8_t *buff, float *ch1, float *ch2)
@@ -646,29 +649,29 @@ int32_t AlazarATS9870::processPartialBuffer( uint8_t *buff, float *ch1, float *c
     uint32_t partialIndex = bufferCounter % buffersPerRoundRobin;
     FILE_LOG(logDEBUG4) << "PARTIAL INDEX " << partialIndex;
     bufferCounter++;
-    
+
 
     if( averager )
     {
-        
+
         //process the buff into the work buffer and if it is the last buffer
         //in the round robin, run the averager
         float *pCh1 = (float *)(ch1WorkBuff.data() + bufferLen*partialIndex/2);
         float *pCh2 = (float *)(ch2WorkBuff.data() + bufferLen*partialIndex/2);
-        
+
         for( uint32_t i=0; i < bufferLen/2; i++)
         {
             pCh1[i] = counts2Volts*(buff[2*i] - 128)   - channelOffset;
             pCh2[i] = counts2Volts*(buff[2*i+1] - 128) - channelOffset;
         }
-        
+
         if( partialIndex == buffersPerRoundRobin - 1)
         {
-            //accumulate the average in the application buffer which needs to 
-            //be cleared to start 
+            //accumulate the average in the application buffer which needs to
+            //be cleared to start
             memset(ch1,0,sizeof(float)*samplesPerAcquisition);
             memset(ch2,0,sizeof(float)*samplesPerAcquisition);
-            
+
             uint32_t ni = recordLength;
             uint32_t nj = nbrWaveforms;
             uint32_t nk = nbrSegments;
@@ -686,31 +689,31 @@ int32_t AlazarATS9870::processPartialBuffer( uint8_t *buff, float *ch1, float *c
                     }
                 }
             }
-            
+
             float denom=nj;
             for( uint32_t i=0; i < ni*nk; i++)
             {
                 ch1[i] /= denom;
                 ch2[i] /= denom;
             }
-        
-            
-        }        
+
+
+        }
     }
     else
     {
         float *pCh1 = (float *)(ch1 + bufferLen*partialIndex/2);
         float *pCh2 = (float *)(ch2 + bufferLen*partialIndex/2);
-        
+
         for( uint32_t i=0; i < bufferLen/2; i++)
         {
             pCh1[i] = counts2Volts*(buff[2*i] - 128)   - channelOffset;
             pCh2[i] = counts2Volts*(buff[2*i+1] - 128) - channelOffset;
         }
-        
+
     }
-    
-    
+
+
     if( partialIndex == buffersPerRoundRobin - 1)
     {
         return 1;

@@ -38,7 +38,7 @@ windowsDLLBuild:
     script:
         - mkdir build
         - cd build
-        - cmake -G "MSYS Makefiles" ../
+        - cmake -G "MSYS Makefiles" -DLOG_LEVEL=2 ../
         - sh ../src/lib/version.sh > ../src/lib/version.h
         - make clean install
     tags:

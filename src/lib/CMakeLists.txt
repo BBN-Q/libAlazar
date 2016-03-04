@@ -22,7 +22,7 @@ add_custom_command(TARGET Alazar
 
 #Some compile flags
 if(WIN32)
-    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread ")
+    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread -O3")
 else()
     ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread -fPIC")
 endif()
@@ -66,4 +66,6 @@ TARGET_LINK_LIBRARIES(errorTest
 )
 
 install(TARGETS Alazar runTests errorTest DESTINATION bin)
+install(TARGETS Alazar DESTINATION dist)
+install(FILES libAlazarAPI.h DESTINATION dist)
 install(FILES libAlazarAPI.h DESTINATION bin)

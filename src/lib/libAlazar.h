@@ -38,10 +38,10 @@ class AlazarATS9870
         std::atomic<int32_t> bufferCounter;
 
         static std::map<RETURN_CODE,std::string> errorMap;
-        
+
         //this working buffer is used for the partial buffer logic when a round
         //robin is distributed over multiple buffers
-        
+
         std::array<float, MAX_WORK_BUFFER_SIZE> ch1WorkBuff;
         std::array<float, MAX_WORK_BUFFER_SIZE> ch2WorkBuff;
 
@@ -69,11 +69,11 @@ class AlazarATS9870
         int32_t rxThreadRun( void );
         void rxThreadStop( void );
 
-        void postBuffer( uint8_t *buff);
+        int32_t postBuffer( uint8_t *buff);
         void printError(RETURN_CODE code, std::string file, int32_t line );
         int32_t    ConfigureBoard(uint32_t systemId, uint32_t boardId,
             const ConfigData_t *config, AcquisitionParams_t *acqParams);
-            
+
         int32_t processBuffer( uint8_t *buff, float *ch1, float *ch2);
         int32_t processPartialBuffer( uint8_t *buff, float *ch1, float *ch2);
 

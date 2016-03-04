@@ -81,14 +81,14 @@ int32_t wait_for_acquisition(float *ch1, float *ch2)
 
     if( ch1 == NULL)
     {
-        FILE_LOG(logERROR) << "NULL Pointer to Ch1";    
+        FILE_LOG(logERROR) << "NULL Pointer to Ch1";
         return(-1);
     }
 
     if( ch2 == NULL)
     {
-        FILE_LOG(logERROR) << "NULL Pointer to Ch2";       
-        return(-1);     
+        FILE_LOG(logERROR) << "NULL Pointer to Ch2";
+        return(-1);
     }
 
     //wait for a buffer to be ready
@@ -110,14 +110,21 @@ int32_t wait_for_acquisition(float *ch1, float *ch2)
     }
     else
     {
-        ret = board1->processBuffer(buff, ch1, ch2);        
+        ret = board1->processBuffer(buff, ch1, ch2);
     }
 
-    board1->postBuffer(buff);
-    FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex << (int64_t)buff ;
+    if( board1->postBuffer(buff) >= 0 )
+    {
+        FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex << (int64_t)buff ;
+    }
+    else
+    {
+        FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex << (int64_t)buff ;
+        return(-1);
+    }
 
     return(ret);
-    
+
 }
 
 int32_t stop()

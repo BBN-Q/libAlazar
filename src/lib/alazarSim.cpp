@@ -65,7 +65,6 @@ RETURN_CODE  AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
     }
     else
     {
-        FILE_LOG(logERROR) << "BUFFER IS OUT OF ORDER" ;
         return ApiInvalidBuffer;
     }
 }    
