@@ -4,7 +4,7 @@ import libAlazar
 import os
 import numpy as np
 import time
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class MyUnitTest(unittest.TestCase):
     @classmethod

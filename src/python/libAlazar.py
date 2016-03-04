@@ -4,7 +4,6 @@ import argparse
 from ctypes import *
 import ctypes.util
 import time
-import matplotlib.pyplot as plt
 import platform
 
 class LibAlazar():
@@ -221,24 +220,6 @@ def main():
                 time.sleep(.0001)
             ch1=np.append(ch1,alazar.ch1Buffer)
             ch2=np.append(ch2,alazar.ch2Buffer)
-
-        if args.plot:
-            
-            
-            plt.figure()
-            plt.plot(ch1)
-            plt.plot(t1.T.flat)    
-            plt.plot(ch2)
-            plt.plot(t2.T.flat)   
-            plt.title('Received')
-            
-                                                
-            plt.figure()
-            plt.plot(ch1-t1.T.flat)
-            plt.plot(ch2-t2.T.flat)
-            plt.title('Diff')
-            
-            plt.show()
 
         alazar.disconnect()
         alazar.stop()
