@@ -1,5 +1,5 @@
 
-INCLUDE_DIRECTORIES("./" ${ALAZAR_INCLUDE_PATH}  )
+INCLUDE_DIRECTORIES("./" ${ALAZAR_INCLUDE_PATH} "../../deps/Catch/include"  )
 MESSAGE("INCLUDE DIRS ${ALAZAR_INCLUDE_PATH}")
 
 
@@ -45,11 +45,11 @@ else()
 endif()
 
 
-ADD_EXECUTABLE(runTests
-	./runTests.cpp
+ADD_EXECUTABLE(apiExample
+	./apiExample.cpp
 )
 
-TARGET_LINK_LIBRARIES(runTests
+TARGET_LINK_LIBRARIES(apiExample
 	Alazar
 	${Boost_LIBRARIES}
 	pthread
@@ -65,7 +65,17 @@ TARGET_LINK_LIBRARIES(errorTest
 	Alazar
 )
 
-install(TARGETS Alazar runTests errorTest DESTINATION bin)
+ADD_EXECUTABLE(unittest
+	./unittest.cpp
+	./testBufferQ.cpp
+
+)
+
+TARGET_LINK_LIBRARIES(unittest
+	Alazar
+)
+
+install(TARGETS Alazar apiExample errorTest unittest DESTINATION bin)
 install(TARGETS Alazar DESTINATION dist)
 install(FILES libAlazarAPI.h DESTINATION dist)
 install(FILES libAlazarAPI.h DESTINATION bin)

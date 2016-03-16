@@ -28,9 +28,7 @@ RETURN_CODE AlazarPostAsyncBuffer (
 	U32     uBufferLength_bytes
 	)
 {    
-    while(!bufferQ.push((int8_t*)pBuffer));
-    //FILE_LOG(logDEBUG4) << "SIM POSTING BUFFER " << std::hex 
-		//<< (int64_t)pBuffer ;
+    while(!bufferQ.push(static_cast<int8_t*>(pBuffer)));
 
 	bufferLenBytes = uBufferLength_bytes;
     return ApiSuccess;
@@ -48,9 +46,7 @@ RETURN_CODE  AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
 		//fill in with some dummy data
 		for( uint32_t i=0; i < (bufferLenBytes/2)/samplesPerRecord; i++)
 		{
-			//temp[2*i]   = (int8_t)(cosf(2*M_PI*i*(float)testCyclesPerRecord/samplesPerRecord)*127) + 128;
-			//temp[2*i+1] = (int8_t)(sinf(2*M_PI*i*(float)testCyclesPerRecord/samplesPerRecord)*127) + 128;
-			int8_t value = (uint8_t)(recordCounter%256);
+			int8_t value = static_cast<int8_t>(recordCounter%256);
 			for( uint32_t j=0; j < samplesPerRecord; j++)
 			{
 				temp[2*j + 2*i*samplesPerRecord]   = value;

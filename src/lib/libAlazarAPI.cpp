@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <iostream>
 #include <cstdio>
 #include <stdio.h>
 #include <string>
@@ -92,13 +93,13 @@ int32_t wait_for_acquisition(float *ch1, float *ch2)
     }
 
     //wait for a buffer to be ready
-    uint8_t *buff;
+    shared_ptr<std::vector<int8_t>> buff;
     if(!board1->dataQ.pop(buff))
     {
         return 0;
     }
 
-    FILE_LOG(logDEBUG4) << "API POPPING DATA " << std::hex << (int64_t)buff ;
+    FILE_LOG(logDEBUG4) << "API POPPING DATA " << std::hex << (uint64_t)(buff.get());
 
     // if there are multiple buffers per roundrobin the partial index logic
     // is used to process the data from the individual buffers into one
@@ -115,11 +116,11 @@ int32_t wait_for_acquisition(float *ch1, float *ch2)
 
     if( board1->postBuffer(buff) >= 0 )
     {
-        FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex << (int64_t)buff ;
+        FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex << (uint64_t)(buff.get()) ;
     }
     else
     {
-        FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex << (int64_t)buff ;
+        FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex << (uint64_t)(buff.get()) ;
         return(-1);
     }
 

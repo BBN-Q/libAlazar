@@ -84,7 +84,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     // SampleRateId is set to 1e9 and there is an external ref clock configured
     // so the sample rate is 1e9/decimation; decimation factor has to be 1,2,4
     // or any multiple of 10
-    uint32_t decimation = 1000000000/(uint32_t)config->samplingRate;
+    uint32_t decimation = 1000000000/static_cast<uint32_t>(config->samplingRate);
     FILE_LOG(logINFO) << "Decimation " << decimation;
     if(decimation != 1 && decimation != 2 && decimation != 4)
     {
@@ -114,7 +114,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     channelOffset = config->verticalOffset;
     counts2Volts = 2*channelScale/256.0;
 
-    uint32_t rangeIDKey= (uint32_t)(config->verticalScale*1000);
+    uint32_t rangeIDKey= static_cast<uint32_t>(config->verticalScale*1000);
     if( rangeIdMap.find(rangeIDKey) == rangeIdMap.end() )
     {
         FILE_LOG(logERROR) << "Invalid Channel Scale: " <<  rangeIDKey;
@@ -170,7 +170,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
             boardHandle,			// HANDLE -- board handle
             CHANNEL_B,				// U8 -- input channel
             couplingMap[config->verticalCoupling],			// U32 -- input coupling id
-            rangeIdMap[(uint32_t)(config->verticalScale*1000)],		// U32 -- input range id
+            rangeIdMap[static_cast<uint32_t>(config->verticalScale*1000)],		// U32 -- input range id
             IMPEDANCE_50_OHM		// U32 -- input impedance id
             );
     if (retCode != ApiSuccess)
@@ -195,7 +195,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     //trigLevelCode = uint8(128 + 127*(trigSettings.triggerLevel/1000/trigChannelRange));
     //uint32_t = conf->triggerLevel
     uint32_t trigChannelRange = 5;
-    uint32_t trigLevelCode = uint8_t(128 + 127*(config->triggerLevel/1000/trigChannelRange));
+    uint32_t trigLevelCode = static_cast<uint32_t>(128 + 127*(config->triggerLevel/1000/trigChannelRange));
     FILE_LOG(logINFO) << "Trigger Level Code " << trigLevelCode;
 
     const char* triggerSourceKey= config->triggerSource;
@@ -337,12 +337,10 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
         acqParams->numberAcquistions = nbrBuffers/buffersPerRoundRobin;
 
     }
+    
     samplesPerAcquisition = acqParams->samplesPerAcquisition;
     FILE_LOG(logINFO) << "samplesPerAcquisition: " << samplesPerAcquisition;
     FILE_LOG(logINFO) << "numberAcquistions: " << acqParams->numberAcquistions;
-
-
-
 
     return 0;
 }
@@ -356,7 +354,7 @@ int32_t AlazarATS9870::rx( void)
 
     while( 1)
     {
-        uint8_t *buff=NULL;
+        std::shared_ptr<std::vector<int8_t>> buff;
         while(!bufferQ.pop(buff))
         {
             if ( threadStop )
@@ -364,9 +362,7 @@ int32_t AlazarATS9870::rx( void)
                 return 0;
             }
         }
-        //FILE_LOG(logDEBUG4) << "RX POPPED BUFFER " << std::hex << (int64_t)buff ;
 
-        using namespace std::chrono;
         while(1)
         {
 
@@ -374,10 +370,9 @@ int32_t AlazarATS9870::rx( void)
             {
                 return 0;
             }
-            retCode = AlazarWaitAsyncBufferComplete(boardHandle,buff,1000);//1 sec timeout
+            retCode = AlazarWaitAsyncBufferComplete(boardHandle,buff.get()->data(),1000);//1 sec timeout
             if( retCode == ApiWaitTimeout)
             {
-                //FILE_LOG(logDEBUG4) << "AlazarWaitAsyncBufferComplete timedout";
                 continue;
             }
             else if( retCode == ApiSuccess)
@@ -399,7 +394,7 @@ int32_t AlazarATS9870::rx( void)
                 return 0;
             }
         }
-        //FILE_LOG(logDEBUG4) << "RX POSTING DATA " << std::hex << (int64_t)buff;
+
         if( threadStop )
         {
             return 0;
@@ -427,12 +422,11 @@ int32_t AlazarATS9870::rxThreadRun( void )
         return -1;
     }
 
-    uint8_t *buff=NULL;
-    uint32_t nbrBuffersMaxMin = std::min(nbrBuffers,      (uint32_t)MAX_NUM_BUFFERS);
-    nbrBuffersMaxMin = std::max(nbrBuffersMaxMin,(uint32_t)MIN_NUM_BUFFERS);
+    uint32_t nbrBuffersMaxMin = std::min(nbrBuffers, static_cast<uint32_t>(MAX_NUM_BUFFERS));
+    nbrBuffersMaxMin = std::max(nbrBuffersMaxMin,static_cast<uint32_t>(MIN_NUM_BUFFERS));
     for (uint32_t i = 0; i < nbrBuffersMaxMin; ++i)
     {
-        buff= (uint8_t *)malloc(bufferLen);
+        auto buff = std::make_shared<std::vector<int8_t> >(bufferLen);
         postBuffer(buff);
     }
 
@@ -467,10 +461,10 @@ void AlazarATS9870::rxThreadStop( void )
     threadStop = false;
 }
 
-int32_t AlazarATS9870::postBuffer( uint8_t *buff)
+int32_t AlazarATS9870::postBuffer( shared_ptr<std::vector<int8_t>> buff)
 {
     while (!bufferQ.push(buff));
-    RETURN_CODE retCode = AlazarPostAsyncBuffer(boardHandle,buff,bufferLen);
+    RETURN_CODE retCode = AlazarPostAsyncBuffer(boardHandle,buff.get()->data(),bufferLen);
 
     if( retCode != ApiSuccess)
     {
@@ -479,7 +473,7 @@ int32_t AlazarATS9870::postBuffer( uint8_t *buff)
     }
     else
     {
-        FILE_LOG(logDEBUG4) << "POSTED BUFFER " << std::hex << (int64_t)buff;
+        FILE_LOG(logDEBUG4) << "POSTED BUFFER " << std::hex << (uint64_t)(buff.get());
     }
 
     return(0);
@@ -488,7 +482,6 @@ int32_t AlazarATS9870::postBuffer( uint8_t *buff)
 
 int32_t AlazarATS9870::getBufferSize(void)
 {
-
 
     //need to fit at least one record in a buffer
     if( recordLength * numChannels > bufferSize )
@@ -500,8 +493,8 @@ int32_t AlazarATS9870::getBufferSize(void)
     //Find the factors of the number of round robins.
     //Each buffer will contain an integer number of round robins and the number
     //of round robins will be divided equally amoung all of the buffers.
-    std::list<uint64_t> rrFactors;
-    for(uint64_t ii = 1; ii<=nbrRoundRobins; ii++) {
+    std::list<uint32_t> rrFactors;
+    for(uint32_t ii = 1; ii<=nbrRoundRobins; ii++) {
         if(nbrRoundRobins % ii == 0) {
             rrFactors.push_front(ii);
         }
@@ -509,9 +502,9 @@ int32_t AlazarATS9870::getBufferSize(void)
 
     //find the maximum number of rr's that can fit in the buffer
     roundRobinsPerBuffer=0;
-    for (std::list<uint64_t>::iterator rr=rrFactors.begin(); rr != rrFactors.end(); ++rr)
+    for (std::list<uint32_t>::iterator rr=rrFactors.begin(); rr != rrFactors.end(); ++rr)
     {
-        uint64_t bufferSizeTest = (uint64_t)recordLength * (uint64_t)nbrSegments * (uint64_t)nbrWaveforms * *rr * numChannels;
+        uint64_t bufferSizeTest = recordLength * nbrSegments * nbrWaveforms * *rr * numChannels;
         if ( bufferSizeTest <= bufferSize )
         {
             roundRobinsPerBuffer = *rr;
@@ -547,8 +540,8 @@ int32_t AlazarATS9870::getBufferSize(void)
     // Factor the number of records per round robin.
     // The number of records per buffer will be one of these factors
     uint32_t recordsPerRoundRobin = nbrSegments*nbrWaveforms;
-    std::list<uint64_t> recFactors;
-    for(uint64_t ii = 1; ii<=recordsPerRoundRobin; ii++) {
+    std::list<uint32_t> recFactors;
+    for(uint32_t ii = 1; ii<=recordsPerRoundRobin; ii++) {
         if(recordsPerRoundRobin % ii == 0) {
             recFactors.push_front(ii);
         }
@@ -556,9 +549,9 @@ int32_t AlazarATS9870::getBufferSize(void)
 
     //Find the number of records that can come closest to the max buffer size
     buffersPerRoundRobin = 0;
-    for (std::list<uint64_t>::iterator rec=recFactors.begin(); rec != recFactors.end(); ++rec)
+    for (std::list<uint32_t>::iterator rec=recFactors.begin(); rec != recFactors.end(); ++rec)
     {
-        uint64_t bufferSizeTest = (uint64_t)recordLength * *rec * (uint64_t)numChannels;
+        uint32_t bufferSizeTest = recordLength * *rec * numChannels;
         if ( bufferSizeTest <= bufferSize )
         {
             recordsPerBuffer = *rec;
@@ -592,13 +585,17 @@ int32_t AlazarATS9870::getBufferSize(void)
 }
 
 
-int32_t AlazarATS9870::processBuffer( uint8_t *buff, float *ch1, float *ch2)
+int32_t AlazarATS9870::processBuffer( std::shared_ptr<std::vector<int8_t>> buffPtr, float *ch1, float *ch2)
 {
+
 
     //accumulate the average in the application buffer which needs to
     //be cleared to start
     memset(ch1,0,sizeof(float)*samplesPerAcquisition);
     memset(ch2,0,sizeof(float)*samplesPerAcquisition);
+    
+    //the raw pointer makes the code more readable
+    int8_t *buff = static_cast<int8_t*>(buffPtr.get()->data());
 
     if(averager)
     {
@@ -644,12 +641,14 @@ int32_t AlazarATS9870::processBuffer( uint8_t *buff, float *ch1, float *ch2)
 
 }
 
-int32_t AlazarATS9870::processPartialBuffer( uint8_t *buff, float *ch1, float *ch2)
+int32_t AlazarATS9870::processPartialBuffer( std::shared_ptr<std::vector<int8_t>> buffPtr, float *ch1, float *ch2)
 {
     uint32_t partialIndex = bufferCounter % buffersPerRoundRobin;
     FILE_LOG(logDEBUG4) << "PARTIAL INDEX " << partialIndex;
     bufferCounter++;
 
+    //the raw pointer makes the code more readable
+    int8_t *buff = static_cast<int8_t*>(buffPtr.get()->data());
 
     if( averager )
     {

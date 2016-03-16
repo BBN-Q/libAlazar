@@ -9,6 +9,8 @@
 #include <map>
 #include <thread>
 #include <array>
+#include <mutex>
+#include <queue>
 
 
 #include "libAlazarConfig.h"
@@ -16,10 +18,11 @@
 #include "AlazarApi.h"
 #include "AlazarError.h"
 #include "AlazarCmd.h"
+#include "alazarBuff.h"
 
 #define MAX_NUM_BUFFERS 32
 #define MIN_NUM_BUFFERS  2
-#define MAX_BUFFER_SIZE 0x400000 // 4M
+#define MAX_BUFFER_SIZE 0x400000
 #define MAX_WORK_BUFFER_SIZE 0x400000 // 4M
 
 class AlazarATS9870
@@ -32,8 +35,7 @@ class AlazarATS9870
 
         //these queues are used to manage the DMA buffer pointers passed to the
         //ATS DLL
-        boost::lockfree::spsc_queue<uint8_t*,  boost::lockfree::capacity<MAX_NUM_BUFFERS>> bufferQ;
-        boost::lockfree::spsc_queue<uint8_t*, boost::lockfree::capacity<MAX_NUM_BUFFERS>> dataQ;
+        AlazarBufferQ<std::shared_ptr<std::vector<int8_t>>> bufferQ,dataQ;
 
         std::atomic<int32_t> bufferCounter;
 
@@ -69,14 +71,14 @@ class AlazarATS9870
         int32_t rxThreadRun( void );
         void rxThreadStop( void );
 
-        int32_t postBuffer( uint8_t *buff);
+        int32_t postBuffer( std::shared_ptr<std::vector<int8_t>> );
         void printError(RETURN_CODE code, std::string file, int32_t line );
         int32_t    ConfigureBoard(uint32_t systemId, uint32_t boardId,
             const ConfigData_t *config, AcquisitionParams_t *acqParams);
 
-        int32_t processBuffer( uint8_t *buff, float *ch1, float *ch2);
-        int32_t processPartialBuffer( uint8_t *buff, float *ch1, float *ch2);
-
+        int32_t processBuffer( std::shared_ptr<std::vector<int8_t>> buff, float *ch1, float *ch2);
+        int32_t processPartialBuffer( std::shared_ptr<std::vector<int8_t>> buff, float *ch1, float *ch2);
+        
     protected:
 
         ConfigData_t config;
