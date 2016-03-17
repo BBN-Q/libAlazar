@@ -74,7 +74,7 @@ class AlazarATS9870
         int32_t postBuffer( std::shared_ptr<std::vector<int8_t>> );
         void printError(RETURN_CODE code, std::string file, int32_t line );
         int32_t    ConfigureBoard(uint32_t systemId, uint32_t boardId,
-            const ConfigData_t *config, AcquisitionParams_t *acqParams);
+            const ConfigData_t &config, AcquisitionParams_t &acqParams);
 
         int32_t processBuffer( std::shared_ptr<std::vector<int8_t>> buff, float *ch1, float *ch2);
         int32_t processPartialBuffer( std::shared_ptr<std::vector<int8_t>> buff, float *ch1, float *ch2);

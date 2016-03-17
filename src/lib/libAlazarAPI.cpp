@@ -44,12 +44,24 @@ int32_t connectBoard( const char* logFile )
 int32_t setAll(uint32_t systemId, uint32_t boardId, const ConfigData_t *config,
     AcquisitionParams_t *acqParams)
 {
+    
+    if( config == nullptr || acqParams == nullptr)
+    {
+        FILE_LOG(logERROR) << "COULD NOT SET CONFIGURATION ";
+        return(-1);
+    }
+    
+    
+    
     if( !board1 )
     {
         return(-1);
     }
 
-    int32_t ret = board1->ConfigureBoard(systemId, boardId, config, acqParams);
+    const ConfigData_t &confRef = static_cast<const ConfigData_t&>(*config);
+    AcquisitionParams_t &acqRef = static_cast<AcquisitionParams_t&>(*acqParams);
+
+    int32_t ret = board1->ConfigureBoard(systemId, boardId, confRef, acqRef);
 
     return ret;
 }
