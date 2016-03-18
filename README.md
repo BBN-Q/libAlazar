@@ -14,7 +14,14 @@ _____________
 Assumes msys2 environment is installed with cmake
 
 ### Dependencies:
+* pacman -S make
+* pacman -S mingw64/mingw-w64-x86_64-cmake
+* pacman -S mingw64/mingw-w64-x86_64-gcc
+* pacman -S mingw64/mingw-w64-x86_64-gdb
+* pacman -S mingw64/mingw-w64-x86_64-hdf5
 * pacman -S mingw-w64-x86_64-boost
+
+### Matlab Dependencies for Rebuilding a thunk file
 * http://www.mathworks.com/help/matlab/matlab_external/install-mingw-support-package.html
 * http://www.mathworks.com/help/matlab/matlab_external/compiling-c-mex-files-with-mingw.html
 
@@ -22,13 +29,17 @@ Assumes msys2 environment is installed with cmake
 ```
 mkdir build
 cd build
+../src/lib/version.h > ../src/lib/version.h # only needed to update the version string
 cmake -G "MSYS Makefiles"  ..
 make clean install
 ```
-Uses default values for SIM=false and ALAZAR_INCLUDE_PATH=../AlazarTech/ATS-SDK/6.0.3/Samples/Include
-Use -D option in cmake line to change from defaults.
-For example:
-cmake -G "MSYS Makefiles" -DSIM=true -DALAZAR_INCLUDE_PATH=<path to SDK inlcude file>
+NOTE:
+
+1. Uses default values for SIM=false and ALAZAR_INCLUDE_PATH=../AlazarTech/ATS-SDK/6.0.3/Samples/Include
+2. Use -D option in cmake line to change from defaults.
+    
+    For example:
+    cmake -G "MSYS Makefiles" -DSIM=true -DALAZAR_INCLUDE_PATH=<path to SDK inlcude file>
 
 ## Ubuntu 14.04.1 LTS
 
@@ -69,9 +80,9 @@ ____________
 Uses the most recent git tag and SHA1.  Format is:
 
 ```
-R<MAJOR>_<MINOR>-<SHA1>-<dirty[OPTIONAL]>
+R<MAJOR>_<MINOR>-<Commits Since Tag>-<git sha1>[-<dirty>]
 ```
-"dirty" indicates that the code was built from a branch with uncommitted code.
+If present, "dirty" indicates that the code was built from a branch with uncommitted code.
 
 
 # Matlab Driver
