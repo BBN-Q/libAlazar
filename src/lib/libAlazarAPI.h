@@ -38,16 +38,15 @@ typedef struct AcquisitionParams
 AcquisitionParams_t;
 
 
-int32_t connectBoard( const char* );
-int32_t disconnect(void);
-int32_t setAll(uint32_t systemId, uint32_t boardId, const ConfigData_t *config,
+int32_t connectBoard( uint32_t boardID, const char* );
+int32_t disconnect(uint32_t boardID);
+int32_t setAll(uint32_t boardId, const ConfigData_t *config,
     AcquisitionParams_t *acqParams);
 
-int32_t acquire(void);
-int32_t wait_for_acquisition(float *ch1, float *ch2);
-int32_t stop();
+int32_t acquire(uint32_t boardId);
+int32_t wait_for_acquisition(uint32_t boardID,float *ch1, float *ch2);
+int32_t stop(uint32_t boardID);
 int32_t flash_led(int32_t numTimes, float period);
-int32_t transfer_waveform(void);
 
 #ifdef __cplusplus
 }

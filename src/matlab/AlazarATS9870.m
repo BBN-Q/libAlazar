@@ -75,20 +75,22 @@ classdef AlazarATS9870 < hgsetget
             unloadlibrary libAlazar;
         end
         
-        function connect(~,address,logname)
+        function connect(obj,address,logname)
             
             if nargin < 3
                 logname = 'libAlazar.log';
             end
             
-            ret = calllib('libAlazar','connectBoard',logname);     
+            obj.address = address;
+            
+            ret = calllib('libAlazar','connectBoard',address,logname);     
             if ret < 0
                 error('Can''t Connect to board')
             end
         end
         
-        function disconnect(~)
-           calllib('libAlazar','disconnect');
+        function disconnect(obj)
+           calllib('libAlazar','disconnect',obj.address);
         end
         
         %Function to flash the LED (at least then we know something works).
@@ -134,7 +136,7 @@ classdef AlazarATS9870 < hgsetget
             acq.samplesPerAcquisition = 0;
             acq.numberAcquistions = 0;
             
-            [ret,~,acq] = calllib('libAlazar','setAll',1,1,conf,acq);
+            [ret,~,acq] = calllib('libAlazar','setAll',obj.address,conf,acq);
                         
             if ret < 0
                 error('Could not set config parameters')
@@ -160,7 +162,7 @@ classdef AlazarATS9870 < hgsetget
         
         %Setup and start an acquisition
         function acquire(obj)
-            ret = calllib('libAlazar','acquire');
+            ret = calllib('libAlazar','acquire',obj.address);
             if ret < 0
                 error('Acquire API call failed')
             end
@@ -168,7 +170,7 @@ classdef AlazarATS9870 < hgsetget
         
         function stop(obj)
             
-            ret = calllib('libAlazar','stop');            
+            ret = calllib('libAlazar','stop',obj.address);            
             if ret < 0
                 error('Stop Failed: %d',ret);
             end
@@ -187,7 +189,7 @@ classdef AlazarATS9870 < hgsetget
                 start=clock;
                 while ~ret
                     
-                    ret=calllib('libAlazar','wait_for_acquisition',obj.ch1Ptr,obj.ch2Ptr);
+                    ret=calllib('libAlazar','wait_for_acquisition',obj.address,obj.ch1Ptr,obj.ch2Ptr);
                     
                     if ret < 0
                         error('Acquisition Failed - API Error')

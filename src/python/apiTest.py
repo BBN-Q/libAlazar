@@ -37,7 +37,7 @@ class MyUnitTest(unittest.TestCase):
         self.logFile = logFile
         if os.path.isfile(self.logFile):
             os.remove(self.logFile)
-        ret =self.lib.connectBoard(self.logFile)
+        ret =self.lib.connectBoard(1,self.logFile)
         
         
     @classmethod
@@ -136,7 +136,7 @@ class TestAPI(MyUnitTest):
     def test_config(self):
         self.connect(self.test_config.__name__+'.log')
         
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         self.assertEqual(ret,0)    
         
         self.checkLog('recordLength',self.config['recordLength'],int)
@@ -155,28 +155,28 @@ class TestAPI(MyUnitTest):
     def test_single_record_too_large(self):
         self.connect(self.test_single_record_too_large.__name__+'.log')
         self.config['bufferSize'] = 4096
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertNotEqual(ret,0)   
 
     def test_max_buffer_size_exceeded(self):
         self.connect(self.test_max_buffer_size_exceeded.__name__+'.log')
         self.config['bufferSize'] = 2**23
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)    
         
     def test_record_length_alignment(self):
         self.connect(self.test_record_length_alignment.__name__+'.log')
         self.config['recordLength'] = 257
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertNotEqual(ret,0)    
         
     def test_record_length_min(self):
         self.connect(self.test_record_length_min.__name__+'.log')
         self.config['recordLength'] = 255
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertNotEqual(ret,0)    
         
@@ -186,7 +186,7 @@ class TestAPI(MyUnitTest):
         self.config['recordLength'] = 1024
         self.config['nbrWaveforms'] = 4
         self.config['bufferSize'] = 8192
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,0)    
         self.checkLog('roundRobinsPerBuffer',1,int)
@@ -199,7 +199,7 @@ class TestAPI(MyUnitTest):
         self.config['nbrWaveforms'] = 4
         self.config['nbrRoundRobins'] = 32
         self.config['bufferSize'] = 8192
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,0)    
         self.checkLog('roundRobinsPerBuffer',4,int)
@@ -211,7 +211,7 @@ class TestAPI(MyUnitTest):
         self.config['nbrWaveforms'] = 3
         self.config['nbrRoundRobins'] = 3
         self.config['bufferSize'] = 8192
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,0)    
         self.checkLog('buffersPerRoundRobin',3,int)
@@ -220,7 +220,7 @@ class TestAPI(MyUnitTest):
         logFile = self.test_mode_config.__name__+'.log'
         self.connect(logFile)
         self.config['acquireMode'] = 'avverager'
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         self.initConfig()
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)   
@@ -229,7 +229,7 @@ class TestAPI(MyUnitTest):
         logFile = self.test_channel_coupling.__name__+'.log'
         self.connect(logFile)
         self.config['verticalCoupling'] = 'ac'
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)   
 
@@ -237,7 +237,7 @@ class TestAPI(MyUnitTest):
         logFile = self.test_trigger_coupling.__name__+'.log'
         self.connect(logFile)
         self.config['triggerCoupling'] = 'ac'
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)   
         
@@ -245,7 +245,7 @@ class TestAPI(MyUnitTest):
         logFile = self.test_trigger_source.__name__+'.log'
         self.connect(logFile)
         self.config['triggerSource'] = 'ext'
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)   
         
@@ -253,7 +253,7 @@ class TestAPI(MyUnitTest):
         logFile = self.test_trigger_slope.__name__+'.log'
         self.connect(logFile)
         self.config['triggerSource'] = 'rising'
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)   
         
@@ -261,7 +261,7 @@ class TestAPI(MyUnitTest):
         logFile = self.test_trigger_bandwidth.__name__+'.log'
         self.connect(logFile)
         self.config['bandwidth'] = ''
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)   
         
@@ -269,24 +269,24 @@ class TestAPI(MyUnitTest):
         logFile = self.test_channel_scale.__name__+'.log'
         self.connect(logFile)
         self.config['verticalScale'] = 99.0
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)   
         
         self.config['verticalScale'] = 2.0
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         self.assertEqual(ret,0)   
         
     def test_sample_rate(self):
         logFile = self.test_sample_rate.__name__+'.log'
         self.connect(logFile)
         self.config['samplingRate'] = 59e6
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         #expecting a -1 here - testing that the call fails
         self.assertEqual(ret,-1)   
         
         self.config['samplingRate'] = 500e6
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         self.assertEqual(ret,0)   
 
     def test_digitizer(self):        
@@ -303,7 +303,7 @@ class TestAPI(MyUnitTest):
         #configure for using exactly 3 buffers
         self.config['bufferSize']       = 1024*2*3*5
         
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         self.assertEqual(ret,0)   
         
         ret = self.lib.acquire()
@@ -328,7 +328,7 @@ class TestAPI(MyUnitTest):
         #configure for using exactly 3 buffers
         self.config['bufferSize']       = 1024*5*3*3*2
         
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         self.assertEqual(ret,0)   
         
         ret = self.lib.acquire()
@@ -351,7 +351,7 @@ class TestAPI(MyUnitTest):
         #configure for 21 buffers per round robin
         self.config['bufferSize']       = 1024*2*3
         
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         self.assertEqual(ret,0)   
         
         ret = self.lib.acquire()
@@ -374,7 +374,7 @@ class TestAPI(MyUnitTest):
         #configure for 21 buffers per round robin
         self.config['bufferSize']       = 1024*2*3
         
-        ret = self.lib.setAll(1,1,self.config)
+        ret = self.lib.setAll(self.config)
         self.assertEqual(ret,0)   
         
         ret = self.lib.acquire()

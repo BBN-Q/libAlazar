@@ -48,35 +48,36 @@ class LibAlazar():
             
 
         self._connectBoard = self.lib.connectBoard
-        self._connectBoard.argtypes = [c_char_p]
+        self._connectBoard.argtypes = [c_uint32,c_char_p]
         self._connectBoard.restype = c_int32
 
         self._setAll = self.lib.setAll
-        self._setAll.argtypes = [c_uint32,c_uint32,POINTER(self.ConfigData),POINTER(self.AcquisitionParams)]
+        self._setAll.argtypes = [c_uint32,POINTER(self.ConfigData),POINTER(self.AcquisitionParams)]
         self._setAll.restype = c_int32
 
         self._disconnect = self.lib.disconnect
-        self._disconnect.argtypes = []
+        self._disconnect.argtypes = [c_uint32]
         self._disconnect.restype = c_int32
 
         self._stop = self.lib.stop
-        self._stop.argtypes = []
+        self._stop.argtypes = [c_uint32]
         self._stop.restype = c_int32
 
         self._acquire = self.lib.acquire
-        self._acquire.argtypes = []
+        self._acquire.argtypes = [c_uint32]
         self._acquire.restype = c_int32
 
         self._wait_for_acquisition = self.lib.wait_for_acquisition
-        self._wait_for_acquisition.argtypes = [POINTER(c_float),POINTER(c_float)]
+        self._wait_for_acquisition.argtypes = [c_uint32,POINTER(c_float),POINTER(c_float)]
         self._wait_for_acquisition.restype = c_int32
         
 
-    def connectBoard(self,logFile):
-        ret = self._connectBoard(logFile);
+    def connectBoard(self,boardId,logFile):
+        self.boardId = boardId
+        ret = self._connectBoard(boardId,logFile);
         return(ret)
 
-    def setAll(self,systemId,boardId,config):
+    def setAll(self,config):
 
         self.configData = self.ConfigData()
         for k in config.keys():
@@ -86,7 +87,7 @@ class LibAlazar():
         
         self.acquisitionParams = self.AcquisitionParams()
 
-        retVal = self._setAll(systemId,boardId,byref(self.configData),byref(self.acquisitionParams))
+        retVal = self._setAll(self.boardId,byref(self.configData),byref(self.acquisitionParams))
         if retVal < 0:
             return(retVal)
 
@@ -102,19 +103,19 @@ class LibAlazar():
         return 0
 
     def disconnect(self):
-        retVal = self._disconnect()
+        retVal = self._disconnect(self.boardId)
         return retVal
 
     def stop(self):
-        retVal = self._stop()
+        retVal = self._stop(self.boardId)
         return retVal
 
     def acquire(self):
-        retVal = self._acquire()
+        retVal = self._acquire(self.boardId)
         return retVal
 
     def wait_for_acquisition(self):
-        retVal = self._wait_for_acquisition(self.ch1Buffer_p, self.ch2Buffer_p)
+        retVal = self._wait_for_acquisition(self.boardId,self.ch1Buffer_p, self.ch2Buffer_p)
         return retVal
         
     def generateTestPattern(self):
@@ -174,6 +175,7 @@ def main():
         parser.add_argument('--verticalOffset', help='channel offset in volts',type=float,default=0.0)
         parser.add_argument('--verticalScale', help='channel input range, choose from [.04,.1,.2,.4,1.0,2.0,4.0]',type=float,default=1.0)
         parser.add_argument('--bufferSize', help='defaults to 81920',type=int,default=81920)
+        parser.add_argument('--addr', help='board address',type=int,default=1)
         parser.add_argument('--plot', help=' enable plot', dest='plot', action='store_true',default=False)
         args=parser.parse_args()
 
@@ -203,8 +205,10 @@ def main():
         }
 
         alazar=LibAlazar()
-        alazar.connectBoard(args.log)
-        if alazar.setAll(1,1,config) < 0:
+        if alazar.connectBoard(args.addr,args.log) < 0:
+            exit(-1)
+            
+        if alazar.setAll(config) < 0:
             exit(-1)
             
             

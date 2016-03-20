@@ -15,16 +15,29 @@
 
 using namespace std;
 
-AlazarATS9870 *board1=NULL;
+#define MAX_NUM_BOARDS 2
+AlazarATS9870 boards[MAX_NUM_BOARDS];
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
-int32_t connectBoard( const char* logFile )
+int32_t connectBoard( uint32_t boardId, const char* logFile )
 {
     FILE *pFile = stdout;
 
+    if( boardId > 0 && boardId <= MAX_NUM_BOARDS)
+    {
+        AlazarATS9870 &board = boards[boardId-1];        
+        board.sysInfo();
+    }
+    else
+    {
+        FILE_LOG(logERROR) << "Invalid board address "<< boardId;   
+        return(-1);     
+    }
+    
+    
     if (logFile)
     {
         pFile = fopen(logFile, "a");
@@ -33,17 +46,14 @@ int32_t connectBoard( const char* logFile )
     Output2FILE::Stream() = pFile;
     FILE_LOG(logINFO) << "libAlazar Rev "<<std::string(VERSION);
 
-
-    board1 = new AlazarATS9870();
-    board1->sysInfo();
-
     return(0);
 
 }
 
-int32_t setAll(uint32_t systemId, uint32_t boardId, const ConfigData_t *config,
+int32_t setAll(uint32_t boardId, const ConfigData_t *config,
     AcquisitionParams_t *acqParams)
 {
+    AlazarATS9870 &board = boards[boardId-1];
     
     if( config == nullptr || acqParams == nullptr)
     {
@@ -51,46 +61,32 @@ int32_t setAll(uint32_t systemId, uint32_t boardId, const ConfigData_t *config,
         return(-1);
     }
     
-    
-    
-    if( !board1 )
-    {
-        return(-1);
-    }
-
     const ConfigData_t &confRef = static_cast<const ConfigData_t&>(*config);
     AcquisitionParams_t &acqRef = static_cast<AcquisitionParams_t&>(*acqParams);
 
-    int32_t ret = board1->ConfigureBoard(systemId, boardId, confRef, acqRef);
+    int32_t ret = board.ConfigureBoard(1, boardId, confRef, acqRef);
 
     return ret;
 }
 
-int32_t acquire(void)
+int32_t acquire(uint32_t boardId)
 {
+    AlazarATS9870 &board = boards[boardId-1];
     int32_t ret=0;
 
-    if( !board1 )
+    if( board.threadRunning )
     {
         return(-1);
     }
 
-    if( board1->threadRunning )
-    {
-        return(-1);
-    }
-
-    ret = board1->rxThreadRun();
+    ret = board.rxThreadRun();
 
     return ret;
 }
 
-int32_t wait_for_acquisition(float *ch1, float *ch2)
+int32_t wait_for_acquisition(uint32_t boardId,float *ch1, float *ch2)
 {
-    if( !board1 )
-    {
-        return(-1);
-    }
+    AlazarATS9870 &board = boards[boardId-1];
 
     if( ch1 == NULL)
     {
@@ -106,7 +102,7 @@ int32_t wait_for_acquisition(float *ch1, float *ch2)
 
     //wait for a buffer to be ready
     shared_ptr<std::vector<int8_t>> buff;
-    if(!board1->dataQ.pop(buff))
+    if(!board.dataQ.pop(buff))
     {
         return 0;
     }
@@ -117,16 +113,16 @@ int32_t wait_for_acquisition(float *ch1, float *ch2)
     // is used to process the data from the individual buffers into one
     // application channel buffer
     int32_t ret=0;
-    if (board1->partialBuffer)
+    if (board.partialBuffer)
     {
-        ret = board1->processPartialBuffer(buff, ch1, ch2);
+        ret = board.processPartialBuffer(buff, ch1, ch2);
     }
     else
     {
-        ret = board1->processBuffer(buff, ch1, ch2);
+        ret = board.processBuffer(buff, ch1, ch2);
     }
 
-    if( board1->postBuffer(buff) >= 0 )
+    if( board.postBuffer(buff) >= 0 )
     {
         FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex << (uint64_t)(buff.get()) ;
     }
@@ -140,40 +136,30 @@ int32_t wait_for_acquisition(float *ch1, float *ch2)
 
 }
 
-int32_t stop()
+int32_t stop(uint32_t boardId)
 {
-    if( !board1 )
-    {
-        return(-1);
-    }
+    AlazarATS9870 &board = boards[boardId-1];
 
-    board1->rxThreadStop();
-
+    board.rxThreadStop();
 
     return 0;
 }
 
-int32_t disconnect(void)
+int32_t disconnect(uint32_t boardId)
 {
-    if( !board1 )
+    AlazarATS9870 &board = boards[boardId-1];
+
+    if( board.threadRunning)
     {
-        return(-1);
+        stop(boardId);
     }
 
-    if( board1->threadRunning)
-    {
-        stop();
-    }
-
-    delete board1;
-    board1 = NULL;
+    std::shared_ptr<std::vector<int8_t>> buff;
+    board.bufferQ.clear(buff);
+    board.dataQ.clear(buff);
+    board.bufferCounter = 0;
     return 0;
 
-}
-
-int32_t transfer_waveform(void)
-{
-    return 0;
 }
 
 int32_t flash_led(int32_t numTimes, float period)

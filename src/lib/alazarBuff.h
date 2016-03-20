@@ -34,6 +34,15 @@ class AlazarBufferQ
             
             return true;
         }
+        
+        void clear(T &ptr)
+        {
+            while(!q.empty())
+            {
+                ptr = q.front();
+                q.pop();                
+            }
+        }
 
 };
 

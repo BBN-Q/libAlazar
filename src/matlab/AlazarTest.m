@@ -10,7 +10,7 @@ classdef AlazarTest < matlab.unittest.TestCase
         function setUp(testCase)
             testCase.a= AlazarATS9870();
             testCase.r = RespondToDataReady(testCase.a);
-            testCase.a.connect('unittest.log')
+            testCase.a.connect(1,'unittest.log')
         end
     end
  

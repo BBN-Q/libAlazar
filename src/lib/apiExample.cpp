@@ -107,8 +107,8 @@ int main( int argc, char *argv[])
     quit.detach();
 
 
-    connectBoard(NULL);
-    if( setAll( 1,1,&config, &acqParams ) < 0 )
+    connectBoard(1,NULL);
+    if( setAll( 1,&config, &acqParams ) < 0 )
     {
         exit(-1);
     }
@@ -121,14 +121,14 @@ int main( int argc, char *argv[])
     FILE *f1 = fopen("ch1.dat","wb");
     FILE *f2 = fopen("ch2.dat","wb");
 
-    acquire();
+    acquire(1);
 
     #if 1
     uint32_t count=0;
     while( count < acqParams.numberAcquistions )
     {
         //printf("rr %d count %d\n",config.nbrRoundRobins,count);
-        if( wait_for_acquisition(ch1, ch2) )
+        if( wait_for_acquisition(1,ch1, ch2) )
         {
             count++;
             fwrite(ch1,sizeof(float),acqParams.samplesPerAcquisition,f1);
@@ -137,8 +137,8 @@ int main( int argc, char *argv[])
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     #endif
-    stop();
-    disconnect();
+    stop(1);
+    disconnect(1);
 
     delete[] ch1;
     delete[] ch2;
