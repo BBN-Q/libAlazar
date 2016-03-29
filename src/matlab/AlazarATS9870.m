@@ -71,7 +71,9 @@ classdef AlazarATS9870 < hgsetget
         end
         
         %Destructor
-        function delete(~)
+        function delete(obj)
+            obj.stop();
+            obj.disconnect();
             unloadlibrary libAlazar;
         end
         

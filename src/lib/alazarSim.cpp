@@ -24,10 +24,10 @@ uint32_t recordCounter=0;
 
 RETURN_CODE AlazarPostAsyncBuffer (
 	HANDLE  hDevice,
-	void   *pBuffer, 
+	void   *pBuffer,
 	U32     uBufferLength_bytes
 	)
-{    
+{
     while(!bufferQ.push(static_cast<int8_t*>(pBuffer)));
 
 	bufferLenBytes = uBufferLength_bytes;
@@ -38,7 +38,6 @@ RETURN_CODE AlazarPostAsyncBuffer (
 RETURN_CODE  AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
                                                  U32 uTimeout_ms)
 {
-	
 	int8_t *temp;
     while(!bufferQ.pop(temp));
     if( temp == pBuffer)
@@ -53,7 +52,7 @@ RETURN_CODE  AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
 				temp[2*j+1 + 2*i*samplesPerRecord] = value+1;
 			}
 			recordCounter++;
-			
+
 		}
 
         return ApiSuccess;
@@ -63,8 +62,8 @@ RETURN_CODE  AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
     {
         return ApiInvalidBuffer;
     }
-}    
-                                        
+}
+
 RETURN_CODE AlazarGetSDKVersion (
       uint8_t *MajorNumber,
       uint8_t *MinorNumber,
@@ -74,7 +73,7 @@ RETURN_CODE AlazarGetSDKVersion (
 	*MajorNumber = 6;
 	*MinorNumber = 0;
 	*RevisionNumber = 3;
-	
+
 	return ApiSuccess;
 }
 
@@ -87,7 +86,7 @@ uint32_t AlazarNumOfSystems()
 /*
 NOTE:  The list of enums used for the return codes in the API header file from
 the windows SDK is not the same as what is used in the linux SDK.  BUT the ATSApi.dll
-is built with the complete set of error codes that matches the linux SDK API 
+is built with the complete set of error codes that matches the linux SDK API
 header.
 BOTTOM LINE: the most recent Windows SDK provided does not match the DLL build
 todo - since the complete list of enums is available in the Linux API header file
@@ -175,7 +174,7 @@ std::map<RETURN_CODE,std::string> errorMap =
     {ApiWaitFailed,"ApiWaitFailed"},
     {ApiTransferComplete,"ApiTransferComplete"},
     {ApiPllNotLocked,"ApiPllNotLocked"},
-    {ApiNotSupportedInDualChannelMode,"ApiNotSupportedInDualChannelMode"},    
+    {ApiNotSupportedInDualChannelMode,"ApiNotSupportedInDualChannelMode"},
     {ApiLastError ,"ApiLastError"},
 
 };
@@ -190,7 +189,7 @@ const char* AlazarErrorToText(RETURN_CODE retCode)
 	{
 		return errorMap[retCode].c_str();
 	}
-	
+
 
 }
 
@@ -237,7 +236,7 @@ RETURN_CODE AlazarGetDriverVersion (
 	*MinorNumber = 10;
 	*RevisionNumber = 6;
 	return ApiSuccess;
-	
+
 }
 
 HANDLE AlazarGetSystemHandle (
@@ -254,23 +253,23 @@ RETURN_CODE AlazarQueryCapability (
       U32 *Value
 )
 {
-	
+
 	switch( Capability )
 	{
 		default:
 		*Value = 0;
 		break;
-		
+
 	}
-	
-	
-	
+
+
+
 	return ApiSuccess;
 }
 
 RETURN_CODE AlazarSetLED (
       HANDLE BoardHandle,
-	  U32 LedOn 
+	  U32 LedOn
 )
 {
 	return ApiSuccess;
@@ -301,29 +300,29 @@ RETURN_CODE AlazarSetExternalTrigger(HANDLE h, U32 Coupling, U32 Range)
 	return ApiSuccess;
 }
 
-RETURN_CODE 
+RETURN_CODE
     AlazarSetTriggerOperation(HANDLE h, U32 TriggerOperation,
                               U32 TriggerEngine1 /*j,K*/, U32 Source1,
                               U32 Slope1, U32 Level1,
                               U32 TriggerEngine2 /*j,K*/, U32 Source2,
                               U32 Slope2, U32 Level2)
 {
-	return ApiSuccess;	
+	return ApiSuccess;
 }
 
 RETURN_CODE AlazarSetTriggerDelay(HANDLE h, U32 Delay)
 {
-	return ApiSuccess;		
+	return ApiSuccess;
 }
 RETURN_CODE EXPORT AlazarSetTriggerTimeOut(HANDLE h, U32 to_ns)
 {
-	return ApiSuccess;	
+	return ApiSuccess;
 }
 
 RETURN_CODE AlazarSetRecordSize(HANDLE h, U32 PreSize, U32 PostSize)
 {
 	recordSize = PostSize;
-	return ApiSuccess;		
+	return ApiSuccess;
 }
 
 RETURN_CODE AlazarBeforeAsyncRead(HANDLE hBoard, U32 uChannelSelect,
@@ -331,25 +330,25 @@ RETURN_CODE AlazarBeforeAsyncRead(HANDLE hBoard, U32 uChannelSelect,
                           U32 uRecordsPerBuffer, U32 uRecordsPerAcquisition,
                           U32 uFlags)
 {
-	
+
 	recordCounter = 0;
 	samplesPerRecord = uSamplesPerRecord;
-	return ApiSuccess;			
+	return ApiSuccess;
 }
 
 void AlazarClose(HANDLE h)
 {
-					
+
 }
 
 RETURN_CODE AlazarStartCapture(HANDLE h)
 {
-	return ApiSuccess;				
+	return ApiSuccess;
 }
 
 RETURN_CODE AlazarCloseAUTODma(HANDLE h)
 {
-	return ApiSuccess;				
+	return ApiSuccess;
 }
 
 RETURN_CODE  AlazarAbortAsyncRead(HANDLE hBoard)

@@ -33,9 +33,18 @@ class AlazarATS9870
         std::atomic<bool> threadStop;
         std::atomic<bool> threadRunning;
 
-        //these queues are used to manage the DMA buffer pointers passed to the
-        //ATS DLL
-        AlazarBufferQ<std::shared_ptr<std::vector<int8_t>>> bufferQ,dataQ;
+        //These ptr queues are used to manage the DMA buffer pointers passed to the
+        //alazar dll.
+        //The library uses the bufferQ ptr to retreive data from the alazar in the
+        // receive thread.  When the data is ready the lib places the ptr into the
+        // dataQ.  The wait_for_acquisition API call polls the dataQ, and then processes
+        //the data into the application supplied buffers.
+        //The ownerQ is used to maintain a copy of the shared ptr beacuse a ptr
+        //can be popped off the bufferQ in the receive thread and go out of
+        //scope resulting in the allocated buffer memory being freed too soon.
+        AlazarBufferQ<std::shared_ptr<std::vector<uint8_t>>> bufferQ;
+        AlazarBufferQ<std::shared_ptr<std::vector<uint8_t>>> dataQ;
+        AlazarBufferQ<std::shared_ptr<std::vector<uint8_t>>> ownerQ;
 
         std::atomic<int32_t> bufferCounter;
 
@@ -71,14 +80,14 @@ class AlazarATS9870
         int32_t rxThreadRun( void );
         void rxThreadStop( void );
 
-        int32_t postBuffer( std::shared_ptr<std::vector<int8_t>> );
+        int32_t postBuffer( std::shared_ptr<std::vector<uint8_t>> );
         void printError(RETURN_CODE code, std::string file, int32_t line );
         int32_t    ConfigureBoard(uint32_t systemId, uint32_t boardId,
             const ConfigData_t &config, AcquisitionParams_t &acqParams);
 
-        int32_t processBuffer( std::shared_ptr<std::vector<int8_t>> buff, float *ch1, float *ch2);
-        int32_t processPartialBuffer( std::shared_ptr<std::vector<int8_t>> buff, float *ch1, float *ch2);
-        
+        int32_t processBuffer( std::shared_ptr<std::vector<uint8_t>> buff, float *ch1, float *ch2);
+        int32_t processPartialBuffer( std::shared_ptr<std::vector<uint8_t>> buff, float *ch1, float *ch2);
+
     protected:
 
         ConfigData_t config;

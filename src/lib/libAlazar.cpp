@@ -320,7 +320,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
         acqParams.numberAcquistions = nbrBuffers/buffersPerRoundRobin;
 
     }
-    
+
     samplesPerAcquisition = acqParams.samplesPerAcquisition;
     FILE_LOG(logINFO) << "samplesPerAcquisition: " << samplesPerAcquisition;
     FILE_LOG(logINFO) << "numberAcquistions: " << acqParams.numberAcquistions;
@@ -337,7 +337,7 @@ int32_t AlazarATS9870::rx( void)
 
     while( 1)
     {
-        std::shared_ptr<std::vector<int8_t>> buff;
+        std::shared_ptr<std::vector<uint8_t>> buff;
         while(!bufferQ.pop(buff))
         {
             if ( threadStop )
@@ -388,6 +388,11 @@ int32_t AlazarATS9870::rx( void)
 
 int32_t AlazarATS9870::rxThreadRun( void )
 {
+    if( threadRunning)
+    {
+        FILE_LOG(logERROR) << "RX THREAD ALREADY RUNNING ";
+        return -1;
+    }
 
     RETURN_CODE retCode = AlazarBeforeAsyncRead(
         boardHandle,
@@ -396,7 +401,6 @@ int32_t AlazarATS9870::rxThreadRun( void )
         recordLength,
         recordsPerBuffer,
         recordsPerAcquisition,
-        //0x7FFFFFFF,
         ADMA_NPT | ADMA_EXTERNAL_STARTCAPTURE | ADMA_INTERLEAVE_SAMPLES
     );
     if( retCode != ApiSuccess)
@@ -409,7 +413,7 @@ int32_t AlazarATS9870::rxThreadRun( void )
     nbrBuffersMaxMin = std::max(nbrBuffersMaxMin,static_cast<uint32_t>(MIN_NUM_BUFFERS));
     for (uint32_t i = 0; i < nbrBuffersMaxMin; ++i)
     {
-        auto buff = std::make_shared<std::vector<int8_t> >(bufferLen);
+        auto buff = std::make_shared<std::vector<uint8_t> >(bufferLen);
         postBuffer(buff);
     }
 
@@ -438,14 +442,27 @@ void AlazarATS9870::rxThreadStop( void )
         {
             printError(retCode,__FILE__,__LINE__);
         }
+
+        //Clear the buffers to release the ownership of the shared pointers
+        //This will deallocate the memory allocated for the buffers
+        //NOTE:
+        //Only do this afer the AlazarAbortAsyncRead to make sure that the
+        //alazar is done accessing the memory
+        std::shared_ptr<std::vector<uint8_t>> buff;
+        bufferQ.clear(buff);
+        dataQ.clear(buff);
+        ownerQ.clear(buff);
     }
 
     FILE_LOG(logDEBUG4) << "STOPPING RX THREAD" ;
     threadStop = false;
 }
 
-int32_t AlazarATS9870::postBuffer( shared_ptr<std::vector<int8_t>> buff)
+int32_t AlazarATS9870::postBuffer( shared_ptr<std::vector<uint8_t>> buff)
 {
+    //maintain a copy of the shared pointer in the owner Q to prevent the
+    //the pointer from going out of scope in the rx thread
+    while (!ownerQ.push(buff));
     while (!bufferQ.push(buff));
     RETURN_CODE retCode = AlazarPostAsyncBuffer(boardHandle,buff.get()->data(),bufferLen);
 
@@ -568,7 +585,7 @@ int32_t AlazarATS9870::getBufferSize(void)
 }
 
 
-int32_t AlazarATS9870::processBuffer( std::shared_ptr<std::vector<int8_t>> buffPtr, float *ch1, float *ch2)
+int32_t AlazarATS9870::processBuffer( std::shared_ptr<std::vector<uint8_t>> buffPtr, float *ch1, float *ch2)
 {
 
 
@@ -576,9 +593,9 @@ int32_t AlazarATS9870::processBuffer( std::shared_ptr<std::vector<int8_t>> buffP
     //be cleared to start
     memset(ch1,0,sizeof(float)*samplesPerAcquisition);
     memset(ch2,0,sizeof(float)*samplesPerAcquisition);
-    
+
     //the raw pointer makes the code more readable
-    int8_t *buff = static_cast<int8_t*>(buffPtr.get()->data());
+    uint8_t *buff = static_cast<uint8_t*>(buffPtr.get()->data());
 
     if(averager)
     {
@@ -624,14 +641,14 @@ int32_t AlazarATS9870::processBuffer( std::shared_ptr<std::vector<int8_t>> buffP
 
 }
 
-int32_t AlazarATS9870::processPartialBuffer( std::shared_ptr<std::vector<int8_t>> buffPtr, float *ch1, float *ch2)
+int32_t AlazarATS9870::processPartialBuffer( std::shared_ptr<std::vector<uint8_t>> buffPtr, float *ch1, float *ch2)
 {
     uint32_t partialIndex = bufferCounter % buffersPerRoundRobin;
     FILE_LOG(logDEBUG4) << "PARTIAL INDEX " << partialIndex;
     bufferCounter++;
 
     //the raw pointer makes the code more readable
-    int8_t *buff = static_cast<int8_t*>(buffPtr.get()->data());
+    uint8_t *buff = static_cast<uint8_t*>(buffPtr.get()->data());
 
     if( averager )
     {

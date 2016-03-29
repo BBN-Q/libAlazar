@@ -35,10 +35,10 @@ void waitForQuit( void )
 
 int main( int argc, char *argv[])
 {
-    
+
     variables_map vm;
     try
-    {   
+    {
       options_description desc{"Options"};
       desc.add_options()
         ("help,h", "Help screen")
@@ -48,7 +48,8 @@ int main( int argc, char *argv[])
         ("roundrobins", value<uint32_t>()->default_value(1), "number of roundrobins")
         ("recordlength", value<uint32_t>()->default_value(4096), "record length")
         ("buffer", value<uint32_t>()->default_value(4096*2), "buffer size")
-        ("samplingRate", value<float>()->default_value(500e6), "sample rate");
+        ("samplingRate", value<float>()->default_value(500e6), "sample rate")
+        ("timeout", value<uint32_t>()->default_value(1000), "timeout in ms");
 
       store(parse_command_line(argc, argv, desc), vm);
       notify(vm);
@@ -58,15 +59,15 @@ int main( int argc, char *argv[])
           std::cout << desc << '\n';
           exit(0);
       }
-      
+
     }
     catch (const error &ex)
     {
       std::cerr << ex.what() << '\n';
     }
 
-    
-    
+
+
     //todo - make parameters user configurable
     ConfigData_t config =
     {
@@ -99,7 +100,7 @@ int main( int argc, char *argv[])
     config.bufferSize      = vm["buffer"].as<uint32_t>();
     config.samplingRate      = vm["samplingRate"].as<float>();
 
-    
+
     AcquisitionParams_t acqParams;
 
     //this is a hack because because MSYS2 does not handle
@@ -125,16 +126,20 @@ int main( int argc, char *argv[])
 
     #if 1
     uint32_t count=0;
+    uint32_t timeout=0;
     while( count < acqParams.numberAcquistions )
     {
         //printf("rr %d count %d\n",config.nbrRoundRobins,count);
         if( wait_for_acquisition(1,ch1, ch2) )
         {
+            timeout=0;
             count++;
             fwrite(ch1,sizeof(float),acqParams.samplesPerAcquisition,f1);
             fwrite(ch2,sizeof(float),acqParams.samplesPerAcquisition,f2);
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        std::this_thread::sleep_for(std::chrono::microseconds(1000));
+        if( timeout++ > vm["timeout"].as<uint32_t>() )
+            break;
     }
     #endif
     stop(1);

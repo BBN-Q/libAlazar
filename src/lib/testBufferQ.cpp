@@ -8,7 +8,7 @@
 #include "alazarBuff.h"
 #include "catch.hpp"
 
-AlazarBufferQ<std::shared_ptr<std::vector<int8_t>>> q;
+AlazarBufferQ<std::shared_ptr<std::vector<uint8_t>>> q;
 
 #define TEST_BUFFER_SIZE 256
 #define TEST_Q_SIZE 32
@@ -17,7 +17,7 @@ void pusher( void )
 {
     for( uint32_t i=0; i < TEST_Q_SIZE; i++)
     {
-        auto p = std::make_shared<std::vector<int8_t> >(TEST_BUFFER_SIZE);
+        auto p = std::make_shared<std::vector<uint8_t> >(TEST_BUFFER_SIZE);
 
         std::memset(p.get()->data(),i,TEST_BUFFER_SIZE); 
         q.push(p);
@@ -38,7 +38,7 @@ TEST_CASE( "Alazar Buffer Q", "[bufferq]" )
     std::thread t1(pusher);
     t1.detach();
     
-    std::shared_ptr<std::vector<int8_t>> temp;
+    std::shared_ptr<std::vector<uint8_t>> temp;
     for( uint32_t i=0; i < TEST_Q_SIZE; i++)
     {
         //verify the lock by holding off the pusher thread

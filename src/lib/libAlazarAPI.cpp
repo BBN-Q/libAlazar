@@ -28,16 +28,16 @@ int32_t connectBoard( uint32_t boardId, const char* logFile )
 
     if( boardId > 0 && boardId <= MAX_NUM_BOARDS)
     {
-        AlazarATS9870 &board = boards[boardId-1];        
+        AlazarATS9870 &board = boards[boardId-1];
         board.sysInfo();
     }
     else
     {
-        FILE_LOG(logERROR) << "Invalid board address "<< boardId;   
-        return(-1);     
+        FILE_LOG(logERROR) << "Invalid board address "<< boardId;
+        return(-1);
     }
-    
-    
+
+
     if (logFile)
     {
         pFile = fopen(logFile, "a");
@@ -54,13 +54,13 @@ int32_t setAll(uint32_t boardId, const ConfigData_t *config,
     AcquisitionParams_t *acqParams)
 {
     AlazarATS9870 &board = boards[boardId-1];
-    
+
     if( config == nullptr || acqParams == nullptr)
     {
         FILE_LOG(logERROR) << "COULD NOT SET CONFIGURATION ";
         return(-1);
     }
-    
+
     const ConfigData_t &confRef = static_cast<const ConfigData_t&>(*config);
     AcquisitionParams_t &acqRef = static_cast<AcquisitionParams_t&>(*acqParams);
 
@@ -101,7 +101,7 @@ int32_t wait_for_acquisition(uint32_t boardId,float *ch1, float *ch2)
     }
 
     //wait for a buffer to be ready
-    shared_ptr<std::vector<int8_t>> buff;
+    shared_ptr<std::vector<uint8_t>> buff;
     if(!board.dataQ.pop(buff))
     {
         return 0;
@@ -154,10 +154,6 @@ int32_t disconnect(uint32_t boardId)
         stop(boardId);
     }
 
-    std::shared_ptr<std::vector<int8_t>> buff;
-    board.bufferQ.clear(buff);
-    board.dataQ.clear(buff);
-    board.bufferCounter = 0;
     return 0;
 
 }

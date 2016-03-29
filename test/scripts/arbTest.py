@@ -40,6 +40,7 @@ def main():
         s.send("trigger\n")
         time.sleep(args.delay)
 
+
     #data = s.recv(1024)
     s.close()
 
