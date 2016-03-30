@@ -48,3 +48,5 @@ windowsDLLBuild:
     artifacts:
         paths:
             - build/dist
+    only:
+        - tags    
