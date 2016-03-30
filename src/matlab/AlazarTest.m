@@ -35,7 +35,7 @@ classdef AlazarTest < matlab.unittest.TestCase
 
             testCase.a.setAll(testCase.a.settings);
             testCase.a.acquire();
-            testCase.a.wait_for_acquisition(.01);
+            testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 64512);
             testCase.verifyEqual(testCase.a.settings.numberAcquistions, 10);
@@ -55,7 +55,7 @@ classdef AlazarTest < matlab.unittest.TestCase
 
             testCase.a.setAll(testCase.a.settings);
             testCase.a.acquire();
-            testCase.a.wait_for_acquisition(.01);
+            testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 20480);
             testCase.verifyEqual(testCase.a.settings.numberAcquistions, 2);
@@ -74,7 +74,7 @@ classdef AlazarTest < matlab.unittest.TestCase
             
             testCase.a.setAll(testCase.a.settings);
             testCase.a.acquire();
-            testCase.a.wait_for_acquisition(.01);
+            testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 64512);
             testCase.verifyEqual(testCase.a.settings.numberAcquistions, 1);
@@ -94,7 +94,7 @@ classdef AlazarTest < matlab.unittest.TestCase
            
             testCase.a.setAll(testCase.a.settings);
             testCase.a.acquire();
-            testCase.a.wait_for_acquisition(.01);
+            testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 9216);
             testCase.verifyEqual(testCase.a.settings.numberAcquistions, 10);
@@ -119,7 +119,7 @@ classdef AlazarTest < matlab.unittest.TestCase
             
             testCase.a.setAll(testCase.a.settings);
             testCase.a.acquire();
-            testCase.a.wait_for_acquisition(.01);
+            testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 9216);
             testCase.verifyEqual(testCase.a.settings.numberAcquistions, 1);

@@ -9,7 +9,6 @@ ______________
 # Build Instructions
 _____________
 
-
 ## Windows
 Assumes msys2 environment is installed with cmake
 
@@ -21,10 +20,6 @@ Assumes msys2 environment is installed with cmake
 * pacman -S mingw64/mingw-w64-x86_64-hdf5
 * pacman -S mingw-w64-x86_64-boost
 
-### Matlab Dependencies for Rebuilding a thunk file
-* http://www.mathworks.com/help/matlab/matlab_external/install-mingw-support-package.html
-* http://www.mathworks.com/help/matlab/matlab_external/compiling-c-mex-files-with-mingw.html
-
 ### Instructions:
 ```
 mkdir build
@@ -35,11 +30,13 @@ make clean install
 ```
 NOTE:
 
-1. Uses default values for SIM=false and ALAZAR_INCLUDE_PATH=../AlazarTech/ATS-SDK/6.0.3/Samples/Include
+1. Uses default values for SIM=false and LOG_LEVEL=2 (INFO)
 2. Use -D option in cmake line to change from defaults.
-    
+
     For example:
-    cmake -G "MSYS Makefiles" -DSIM=true -DALAZAR_INCLUDE_PATH=<path to SDK inlcude file>
+    ```
+    cmake -G "MSYS Makefiles" -DSIM=true -DLOG_LEVEL=3 ../
+    ```
 
 ## Ubuntu 14.04.1 LTS
 
@@ -47,7 +44,7 @@ NOTE:
 Install Boost Libraries and cmake
 ```
 sudo apt-get install cmake
-sudo apt-get install libboost-all-dev 
+sudo apt-get install libboost-all-dev
 ```
 Download and install [Anaconda](https://3230d63b5fc54e62148e-c95ac804525aac4b6dba79b00b39d1d3.ssl.cf1.rackcdn.com/Anaconda2-2.5.0-Linux-x86_64.sh)
 ```
@@ -88,45 +85,36 @@ If present, "dirty" indicates that the code was built from a branch with uncommi
 # Matlab Driver
 ____________________
 
-## Windows
-Windows matlabSet variable using Windows Control Panel
+## Matlab Dependencies for Rebuilding a thunk file
+The TDM-GCC-64 Compiler is required to build the thunk file.  This Can be added as a Matlab package:
 
-##  On MAC 
-need to export the path to the relocatable shared library
-export DYLD_LIBRARY_PATH=/Users/rmcgurrin/sandbox/q/libAlazar/build/lib
+* http://www.mathworks.com/help/matlab/matlab_external/install-mingw-support-package.html
 
+## Windows 7
+Set the MW_MINGW64_LOC environment variable on Windows 7:
+* http://www.mathworks.com/help/matlab/matlab_external/compiling-c-mex-files-with-mingw.html
 
+##  OSx
+Follow the instructions above to install TDM-GCC-64.
 
-Need TDM-GCC-64 Compiler to build the thunk file.  Can be added as a Matlab 
-package
+Export the path to the relocatable shared library:
+* export DYLD_LIBRARY_PATH=/Users/rmcgurrin/sandbox/q/libAlazar/build/lib
 
-
-To set the MW_MINGW64_LOC environment variable on Windows 7:
-
-* Make sure you have administrative privileges.
-* Select Computer from the Start menu.
-* Choose System properties from the context menu.
-* Click Advanced system settings > Advanced tab.
-* Click Environment Variables.
-* Under System variables, select New.
-* In the New System Variable dialog box, type MW_MINGW64_LOC in the Variable name field.
-* In the Variable value field, type the location of the MinGW-w64 compiler installation, for example, C:\TDM-GCC-64.
-* Click Ok to close the dialog boxes, then close the Control Panel dialog box.
+## Rebuilding the thunk File
+```
+>> cd src/matlab
+>> [~,~]=loadlibrary('libAlazar.dll','libAlazarAPI.h','mfilename','libAlazar_pcwin64.m');
+```
+Then commit
+* libAlazar_pcwin64.m
+* libAlazar_thunk_pcwin64.dll
+* loadLibAlazar.m
 
 
 # ATS9870 DLL ad SDK
 ______________________
 
-Using version 5.10.6 of the dll.  Temporarily added it to the repo.  Build assumes
+* Using version 5.10.6 of the dll.  
+* Build assumes
 it is installed in C:\Windows\System32\ATSApi.dll
-
-todo - add variable dll path to cmake
-
-Assumes Alazar SDK directory is found ../AlazarTech/ATS-SDK relative to the libAlazar
-project dir.
-
-todo - add variable to specify path to sdk
-
-Using v 6.0.3 of the Alazar SDK
-
-
+* Using v 6.0.3 of the Alazar SDK

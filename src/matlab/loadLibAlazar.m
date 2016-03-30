@@ -10,7 +10,7 @@ if ~libisloaded('libAlazar')
         % assumes lib is in Matlab's lib search path
         try
             [ret,~]=loadlibrary('libAlazar.dll',@libAlazar_pcwin64);
-        catch
+       catch
             error('Can''t find libAlazar.dll');
         end
     elseif strcmpi(computer('arch'), 'maci64') 
