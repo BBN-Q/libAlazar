@@ -53,8 +53,10 @@ class MyUnitTest(unittest.TestCase):
             
         for n,line in enumerate(log):
             if keyword in line:
+                log.close()
                 return(line.split()[-1])
-                #print(keyword,line.split()[-1])
+
+        log.close()
                 
     def checkLog(self,keyword,value,myType):
         
