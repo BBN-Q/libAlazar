@@ -74,14 +74,23 @@ class LibAlazar():
 
     def connectBoard(self,boardId,logFile):
         self.boardId = boardId
-        ret = self._connectBoard(boardId,logFile);
+        ret = self._connectBoard(boardId,logFile.encode('ascii'));
         return(ret)
 
     def setAll(self,config):
 
         self.configData = self.ConfigData()
+        fieldNames = [ name for name, ftype in self.ConfigData._fields_]
+
         for k in config.keys():
-            setattr(self.configData,k,config[k])
+            if k in fieldNames:
+                value = config[k] 
+                if isinstance(value,str):
+                    value = value.encode('ascii')
+                setattr(self.configData,k,value)
+            else:
+                #todo log error
+                print('ERROR: %s is not in the config data'%k)
         
         self.config = config
         
