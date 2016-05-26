@@ -2,7 +2,11 @@
 INCLUDE_DIRECTORIES("./" ${ALAZAR_INCLUDE_PATH} "../../deps/Catch/include"  )
 MESSAGE("INCLUDE DIRS ${ALAZAR_INCLUDE_PATH}")
 
-
+add_custom_target (
+    version ALL
+    COMMAND cd ${CMAKE_CURRENT_LIST_DIR} && sh ${CMAKE_CURRENT_LIST_DIR}/version.sh > ${CMAKE_CURRENT_LIST_DIR}/version.h
+ )
+ 
 SET ( LIB_SRC
 	./libAlazar.cpp
 	./libAlazarAPI.cpp
@@ -14,12 +18,6 @@ ADD_LIBRARY( Alazar SHARED ${LIB_SRC} )
 
 #todo - alazar api library needs to be a build parameter
 
-#this command is not supported on OSX cmake
-add_custom_command(TARGET Alazar
-                   PRE_BUILD
-                   COMMAND sh ${CMAKE_CURRENT_LIST_DIR}/version.sh > ${CMAKE_CURRENT_LIST_DIR}/version.h
-				   )
-
 #Some compile flags
 if(WIN32)
     ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread -O3")
@@ -29,7 +27,6 @@ endif()
 
 #used by runTests.cpp for command line options
 find_package(Boost 1.45.0 COMPONENTS program_options)
-
 
 if(SIM)
 	#an alazar simulator is used for testing purposes
@@ -43,6 +40,8 @@ else()
 		/c/windows/system32/ATSApi.dll
     )
 endif()
+
+add_dependencies( AlazarSim version )
 
 
 ADD_EXECUTABLE(apiExample
