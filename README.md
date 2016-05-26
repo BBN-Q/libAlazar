@@ -60,12 +60,15 @@ export LD_LIBRARY_PATH=.:./bin
 Use cmake to build - the ATS simulator is used in Linux for CI.  Also, if building a release,
 running version.sh creates version.h based on the most recent git tag.
 ```
+git submodule update --init
 mkdir build
 cd build
 cmake -DSIM=true ../
 sh ../src/lib/version.sh > ../src/lib/version.h
 make clean install
-./bin/run_tests
+./bin/unittest
+cd ../src/python
+python apiTest.py
 ```
 
 ### OSX
