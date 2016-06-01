@@ -40,7 +40,7 @@ int32_t connectBoard( uint32_t boardId, const char* logFile )
 
     if (logFile)
     {
-        pFile = fopen(logFile, "a");
+        pFile = fopen(logFile, "w");
     }
 
     Output2FILE::Stream() = pFile;

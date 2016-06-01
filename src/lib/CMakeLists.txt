@@ -75,6 +75,6 @@ TARGET_LINK_LIBRARIES(unittest
 )
 
 install(TARGETS Alazar apiExample errorTest unittest DESTINATION bin)
-install(TARGETS Alazar DESTINATION dist)
-install(FILES libAlazarAPI.h DESTINATION dist)
+install(TARGETS Alazar DESTINATION ${INSTALL_PATH})
+install(FILES libAlazarAPI.h DESTINATION ${INSTALL_PATH})
 install(FILES libAlazarAPI.h DESTINATION bin)

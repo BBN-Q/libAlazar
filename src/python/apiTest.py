@@ -6,7 +6,7 @@ import numpy as np
 import time
 #import matplotlib.pyplot as plt
 
-class MyUnitTest(unittest.TestCase):
+class TestLib(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.config={
@@ -74,27 +74,10 @@ class MyUnitTest(unittest.TestCase):
                 time.sleep(.0001)
             ch1=np.append(ch1,self.lib.ch1Buffer)
             ch2=np.append(ch2,self.lib.ch2Buffer)
-        
-        '''           
-        plt.figure()
-        plt.plot(ch1)
-        plt.plot(ch2)
-        plt.title('Diff')
-        plt.show()
-        '''
-        
-        
+
         #generate the test pattern to match
         t1,t2 = self.lib.generateTestPattern()
-        
-        '''
-        plt.figure()
-        plt.plot(t1.T.flat)
-        plt.plot(t2.T.flat)
-        plt.title('Diff')
-        plt.show()
-        '''
-            
+
         maxErrorCh1 = np.max(ch1 - t1.T.flat)
         self.assertEqual(maxErrorCh1,0.0)
         
@@ -102,9 +85,7 @@ class MyUnitTest(unittest.TestCase):
         self.assertEqual(maxErrorCh2,0.0)
 
         return
-    
-class TestAPI(MyUnitTest):
-        
+
     def initConfig(self):
         #reset the config params
         self.config={
