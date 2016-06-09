@@ -6,7 +6,7 @@ add_custom_target (
     version ALL
     COMMAND cd ${CMAKE_CURRENT_LIST_DIR} && sh ${CMAKE_CURRENT_LIST_DIR}/version.sh > ${CMAKE_CURRENT_LIST_DIR}/version.h
  )
- 
+
 SET ( LIB_SRC
 	./libAlazar.cpp
 	./libAlazarAPI.cpp
@@ -15,6 +15,7 @@ SET ( LIB_SRC
 SET_SOURCE_FILES_PROPERTIES( ${LIB_SRC} PROPERTIES LANGUAGE CXX )
 
 ADD_LIBRARY( Alazar SHARED ${LIB_SRC} )
+add_dependencies( Alazar version )
 
 #todo - alazar api library needs to be a build parameter
 
@@ -31,7 +32,6 @@ find_package(Boost 1.45.0 COMPONENTS program_options)
 if(SIM)
 	#an alazar simulator is used for testing purposes
 	ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
-
 	TARGET_LINK_LIBRARIES(Alazar
 		AlazarSim
     )
@@ -40,9 +40,6 @@ else()
 		/c/windows/system32/ATSApi.dll
     )
 endif()
-
-add_dependencies( AlazarSim version )
-
 
 ADD_EXECUTABLE(apiExample
 	./apiExample.cpp
