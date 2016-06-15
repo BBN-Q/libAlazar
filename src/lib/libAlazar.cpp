@@ -953,3 +953,21 @@ string AlazarATS9870::BoardTypeToText(int boardType) {
 
   return pszName;
 }
+
+//---------------------------------------------------------------------------
+//
+// Function    :  force_trigger()
+//
+// Description :  force a software trigger
+//
+//---------------------------------------------------------------------------
+int32_t AlazarATS9870::force_trigger( void )
+{
+
+    RETURN_CODE retCode = AlazarForceTrigger(boardHandle);
+    if (retCode != ApiSuccess)
+    {
+        printError(retCode,__FILE__,__LINE__);
+    }
+    return(retCode);
+}

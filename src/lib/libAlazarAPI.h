@@ -43,6 +43,7 @@ int32_t acquire(uint32_t boardId);
 int32_t wait_for_acquisition(uint32_t boardID, float *ch1, float *ch2);
 int32_t stop(uint32_t boardID);
 int32_t flash_led(int32_t numTimes, float period);
+int32_t force_trigger( uint32_t boardID );
 
 #ifdef __cplusplus
 }
