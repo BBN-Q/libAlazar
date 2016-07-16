@@ -2,6 +2,15 @@
 INCLUDE_DIRECTORIES("./" ${ALAZAR_INCLUDE_PATH} "../../deps/Catch/include"  )
 MESSAGE("INCLUDE DIRS ${ALAZAR_INCLUDE_PATH}")
 
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+
+#find threading library
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+#we need C++11 support
+set(CMAKE_CXX_STANDARD 11)
+
 add_custom_target (
     version ALL
     COMMAND cd ${CMAKE_CURRENT_LIST_DIR} && sh ${CMAKE_CURRENT_LIST_DIR}/version.sh > ${CMAKE_CURRENT_LIST_DIR}/version.h
@@ -19,15 +28,11 @@ add_dependencies( Alazar version )
 
 #todo - alazar api library needs to be a build parameter
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-
 #Some compile flags
 if(WIN32)
-    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -O3")
+    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall -O3")
 else()
-    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
+    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 endif()
 
 #used by runTests.cpp for command line options
