@@ -19,11 +19,15 @@ add_dependencies( Alazar version )
 
 #todo - alazar api library needs to be a build parameter
 
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 #Some compile flags
 if(WIN32)
-    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread -O3")
+    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -O3")
 else()
-    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall -pthread")
+    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
 endif()
 
 #used by runTests.cpp for command line options
@@ -35,6 +39,7 @@ if(SIM)
   set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 	TARGET_LINK_LIBRARIES(Alazar
 		AlazarSim
+    Threads::Threads
     )
 else()
 	TARGET_LINK_LIBRARIES(Alazar
@@ -49,7 +54,7 @@ ADD_EXECUTABLE(apiExample
 TARGET_LINK_LIBRARIES(apiExample
 	Alazar
 	${Boost_LIBRARIES}
-	pthread
+	Threads::Threads
 
 )
 
