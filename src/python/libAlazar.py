@@ -73,7 +73,7 @@ class LibAlazar():
 
     def connectBoard(self, boardId, logFile):
         self.boardId = boardId
-        return self._connectBoard(boardId, logFile.encode('ascii'))
+        ret = self._connectBoard(boardId,logFile.encode('utf-8'));
 
     def setAll(self, config):
 
@@ -130,7 +130,7 @@ class LibAlazar():
     def generateTestPattern(self):
 
         #todo - this only will generate 1 round robin in averaging mode when using partial
-        # buffers -
+            # buffers -
 
         numRecords = self.config['nbrWaveforms'] * self.config[
             'nbrSegments'] * self.config['nbrRoundRobins']
@@ -158,9 +158,12 @@ class LibAlazar():
             ch1 = np.average(ch1, axis=2)
 
             ch2 = np.average(ch2, axis=1)
-            ch2 = np.average(ch2, axis=2)
+            ch2=np.average(ch2,axis=2)
 
         return ch1, ch2
+
+
+
 
 
 def main():
@@ -267,8 +270,10 @@ def main():
     if alazar.setAll(config) < 0:
         exit(-1)
 
+
     t1, t2 = alazar.generateTestPattern()
     alazar.acquire()
+
 
     ch1 = np.array([], dtype=np.float32)
     ch2 = np.array([], dtype=np.float32)
@@ -281,6 +286,12 @@ def main():
 
     alazar.disconnect()
     alazar.stop()
+
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.plot(ch1)
+    plt.show()
+
 
 
 if __name__ == "__main__":

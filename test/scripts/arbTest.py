@@ -24,20 +24,20 @@ def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((TCP_IP, TCP_PORT))
 
-    s.send('voltage %f\n'%(args.voltage))
-    s.send('voltage?\n')
+    s.send(b'voltage %f\n'%(args.voltage))
+    s.send(b'voltage?\n')
     d=s.recv(BUFFER_SIZE)
     print(d)
     sys.stdout.flush()
 
-    s.send('burst:ncycles %f\n'%args.numcycles)
-    s.send('burst:ncycles?\n')
+    s.send(b'burst:ncycles %f\n'%args.numcycles)
+    s.send(b'burst:ncycles?\n')
     d=s.recv(BUFFER_SIZE)
     print(d)
     sys.stdout.flush()
 
     while 1:
-        s.send("trigger\n")
+        s.send(b"trigger\n")
         time.sleep(args.delay)
 
 

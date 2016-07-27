@@ -87,6 +87,7 @@ public:
                         float *ch2);
   int32_t processPartialBuffer(std::shared_ptr<std::vector<uint8_t>> buff,
                                float *ch1, float *ch2);
+  int32_t force_trigger( void );
 
 protected:
   ConfigData_t config;

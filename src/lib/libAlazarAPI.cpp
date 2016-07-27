@@ -135,7 +135,15 @@ int32_t disconnect(uint32_t boardId) {
   return 0;
 }
 
-int32_t flash_led(int32_t numTimes, float period) {
+int32_t force_trigger(uint32_t boardId)
+{
+    AlazarATS9870 &board = boards[boardId-1];
+    int32_t retCode = board.force_trigger();
+    return retCode;
+
+}
+int32_t flashLED(uint32_t boardId)
+{
   FILE_LOG(logDEBUG4) << "Flashing LED ... ";
   return 0;
 }
