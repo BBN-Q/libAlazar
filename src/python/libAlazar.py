@@ -41,7 +41,7 @@ class LibAlazar():
         if 'Darwin' in osType:
             self.lib = CDLL('../../build/bin/libAlazar.dylib')
         elif 'Windows' in osType:
-            self.lib = CDLL('../../../../expmgr/lib/libAlazar.dll')
+            self.lib = CDLL('../../build/bin/libAlazar.dll')
         else:
             self.lib = CDLL('../../build/bin/libAlazar.so')
 
@@ -73,8 +73,7 @@ class LibAlazar():
 
     def connectBoard(self, boardId, logFile):
         self.boardId = boardId
-        ret = self._connectBoard(boardId,logFile);
-        return ret
+        ret = self._connectBoard(boardId,logFile.encode('utf-8'));
 
     def setAll(self, config):
 
