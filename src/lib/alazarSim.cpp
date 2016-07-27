@@ -271,4 +271,6 @@ RETURN_CODE AlazarCloseAUTODma(HANDLE h) { return ApiSuccess; }
 
 RETURN_CODE AlazarAbortAsyncRead(HANDLE hBoard) { return ApiSuccess; }
 
+RETURN_CODE AlazarForceTrigger(HANDLE hBoard) { return ApiSuccess; }
+
 uint32_t AlazarTriggered(HANDLE board) { return 1; }
