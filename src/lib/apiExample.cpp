@@ -116,16 +116,16 @@ int main(int argc, char *argv[]) {
   uint32_t timeout = 0;
   while (count < acqParams.numberAcquistions) {
     // printf("rr %d count %d\n",config.nbrRoundRobins,count);
-        force_trigger(1);
-        fflush(stdout);
-        if( wait_for_acquisition(1,ch1, ch2) )
-        {
-            timeout=0;
-            count++;
-            fwrite(ch1,sizeof(float),acqParams.samplesPerAcquisition,f1);
-            fwrite(ch2,sizeof(float),acqParams.samplesPerAcquisition,f2);
-        }
-        std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    force_trigger(1);
+    fflush(stdout);
+    if( wait_for_acquisition(1,ch1, ch2) )
+    {
+        timeout=0;
+        count++;
+        fwrite(ch1,sizeof(float),acqParams.samplesPerAcquisition,f1);
+        fwrite(ch2,sizeof(float),acqParams.samplesPerAcquisition,f2);
+    }
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
     if (timeout++ > vm["timeout"].as<uint32_t>())
       break;
   }

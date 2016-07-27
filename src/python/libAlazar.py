@@ -74,6 +74,7 @@ class LibAlazar():
     def connectBoard(self, boardId, logFile):
         self.boardId = boardId
         ret = self._connectBoard(boardId,logFile);
+        return ret
 
     def setAll(self, config):
 
@@ -158,7 +159,7 @@ class LibAlazar():
             ch1 = np.average(ch1, axis=2)
 
             ch2 = np.average(ch2, axis=1)
-                ch2=np.average(ch2,axis=2)
+            ch2=np.average(ch2,axis=2)
 
         return ch1, ch2
 
@@ -287,10 +288,10 @@ def main():
     alazar.disconnect()
     alazar.stop()
 
-        import matplotlib.pyplot as plt
-        plt.figure()
-        plt.plot(ch1)
-        plt.show()
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.plot(ch1)
+    plt.show()
 
 
 
