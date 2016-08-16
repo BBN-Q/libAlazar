@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import numpy as np
 import argparse
 from ctypes import *
@@ -37,13 +38,18 @@ class LibAlazar():
 
     def __init__(self):
 
+        # load the shared library
+        build_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "..", "..", "build", "bin"))
+
         osType = platform.system()
         if 'Darwin' in osType:
-            self.lib = CDLL('../../build/bin/libAlazar.dylib')
+            self.lib = CDLL(build_path + "/libAlazar.dylib")
         elif 'Windows' in osType:
-            self.lib = CDLL('../../build/bin/libAlazar.dll')
+            os.environ["PATH"] += ";" + build_path
+            self.lib = CDLL(build_path + "\\libAlazar.dll")
         else:
-            self.lib = CDLL('../../build/bin/libAlazar.so')
+            self.lib = CDLL(build_path + "/libAlazar.so")
 
         self._connectBoard = self.lib.connectBoard
         self._connectBoard.argtypes = [c_uint32, c_char_p]
