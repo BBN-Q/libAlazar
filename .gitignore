@@ -1,2 +1,4 @@
 *.log
 src/lib/version.h
+build
+*__pycache__*
