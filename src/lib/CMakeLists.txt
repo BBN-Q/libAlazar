@@ -35,8 +35,10 @@ else()
     ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 endif()
 
-#used by runTests.cpp for command line options
-find_package(Boost 1.45.0 COMPONENTS program_options)
+# used by runTests.cpp for command line options
+# use -DBOOST_ROOT=/path/to/boost for non-system boost and -DBoost_DEBUG=True to debug
+find_package(Boost 1.45.0 COMPONENTS program_options lockfree)
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 
 if(SIM)
 	#an alazar simulator is used for testing purposes
