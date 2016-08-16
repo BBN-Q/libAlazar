@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 #if 1
   uint32_t count = 0;
   uint32_t timeout = 0;
-  while (count < acqParams.numberAcquistions) {
+  while (count < acqParams.numberAcquisitions) {
     // printf("rr %d count %d\n",config.nbrRoundRobins,count);
     force_trigger(1);
     fflush(stdout);

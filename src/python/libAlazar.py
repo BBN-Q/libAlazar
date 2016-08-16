@@ -34,7 +34,7 @@ class LibAlazar():
 
     class AcquisitionParams(Structure):
         _fields_ = [("samplesPerAcquisition", c_uint32),
-                    ("numberAcquistions", c_uint32)]
+                    ("numberAcquisitions", c_uint32)]
 
     def __init__(self):
 
@@ -105,7 +105,7 @@ class LibAlazar():
         if retVal < 0:
             return retVal
 
-        self.numberAcquistions = self.acquisitionParams.numberAcquistions
+        self.numberAcquisitions = self.acquisitionParams.numberAcquisitions
         self.samplesPerAcquisition = self.acquisitionParams.samplesPerAcquisition
 
         self.ch1Buffer = np.zeros(self.samplesPerAcquisition, dtype=np.float32)
@@ -284,7 +284,7 @@ def main():
     ch1 = np.array([], dtype=np.float32)
     ch2 = np.array([], dtype=np.float32)
 
-    for count in range(alazar.numberAcquistions):
+    for count in range(alazar.numberAcquisitions):
         while not alazar.wait_for_acquisition():
             time.sleep(.0001)
         ch1 = np.append(ch1, alazar.ch1Buffer)

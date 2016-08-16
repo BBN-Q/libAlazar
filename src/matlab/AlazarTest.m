@@ -38,7 +38,7 @@ classdef AlazarTest < matlab.unittest.TestCase
             testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 64512);
-            testCase.verifyEqual(testCase.a.settings.numberAcquistions, 10);
+            testCase.verifyEqual(testCase.a.settings.numberAcquisitions, 10);
             
             testCase.verifyEqual((size(testCase.a.data{1}) == [1024,7,9]),logical([1 1 1]));
             testCase.verifyEqual((size(testCase.a.data{2}) == [1024,7,9]),logical([1 1 1]));
@@ -58,7 +58,7 @@ classdef AlazarTest < matlab.unittest.TestCase
             testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 20480);
-            testCase.verifyEqual(testCase.a.settings.numberAcquistions, 2);
+            testCase.verifyEqual(testCase.a.settings.numberAcquisitions, 2);
             
             testCase.verifyEqual((size(testCase.a.data{1}) == [1024,2,2,5]),logical([1 1 1 1]));
             testCase.verifyEqual((size(testCase.a.data{2}) == [1024,2,2,5]),logical([1 1 1 1]));
@@ -77,7 +77,7 @@ classdef AlazarTest < matlab.unittest.TestCase
             testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 64512);
-            testCase.verifyEqual(testCase.a.settings.numberAcquistions, 1);
+            testCase.verifyEqual(testCase.a.settings.numberAcquisitions, 1);
             
             testCase.verifyEqual((size(testCase.a.data{1}) == [1024,7,9]),logical([1 1 1]));
             testCase.verifyEqual((size(testCase.a.data{2}) == [1024,7,9]),logical([1 1 1]));
@@ -97,7 +97,7 @@ classdef AlazarTest < matlab.unittest.TestCase
             testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 9216);
-            testCase.verifyEqual(testCase.a.settings.numberAcquistions, 10);
+            testCase.verifyEqual(testCase.a.settings.numberAcquisitions, 10);
             
             testCase.verifyEqual((size(testCase.a.data{1}) == [1024,9]),logical([1 1]));
             testCase.verifyEqual((size(testCase.a.data{2}) == [1024,9]),logical([1 1]));
@@ -122,7 +122,7 @@ classdef AlazarTest < matlab.unittest.TestCase
             testCase.a.wait_for_acquisition(10);
             
             testCase.verifyEqual(testCase.a.settings.samplesPerAcquisition, 9216);
-            testCase.verifyEqual(testCase.a.settings.numberAcquistions, 1);
+            testCase.verifyEqual(testCase.a.settings.numberAcquisitions, 1);
             
             testCase.verifyEqual((size(testCase.a.data{1}) == [1024,9]),logical([1 1]));
             testCase.verifyEqual((size(testCase.a.data{2}) == [1024,9]),logical([1 1]));

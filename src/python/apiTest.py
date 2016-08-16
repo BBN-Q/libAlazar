@@ -69,7 +69,7 @@ class TestLib(unittest.TestCase):
         ch2 = np.array([], dtype=np.float32)
 
         #wait for the acquisition to be complete
-        for count in range(self.lib.numberAcquistions):
+        for count in range(self.lib.numberAcquisitions):
             while not self.lib.wait_for_acquisition():
                 time.sleep(.0001)
             ch1 = np.append(ch1, self.lib.ch1Buffer)
@@ -129,7 +129,7 @@ class TestLib(unittest.TestCase):
         self.checkLog('recordsPerAcquisition', 1, int)
         self.checkLog('partialBuffer', 0, int)
         self.checkLog('samplesPerAcquisition', 4096, int)
-        self.checkLog('numberAcquistions', 1, int)
+        self.checkLog('numberAcquisitions', 1, int)
         self.checkLog('Input Range', 10, int)
         self.checkLog('Counts2Volts', 0.0078125, float)
         self.checkLog('Trigger Level Code', 153, int)

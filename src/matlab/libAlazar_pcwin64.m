@@ -23,5 +23,5 @@ fcns.thunkname{fcnNum}='int32uint32Thunk';fcns.name{fcnNum}='stop'; fcns.calltyp
 % int32_t flash_led ( int32_t numTimes , float period ); 
 fcns.thunkname{fcnNum}='int32int32floatThunk';fcns.name{fcnNum}='flash_led'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'int32', 'single'};fcnNum=fcnNum+1;
 structs.ConfigData.members=struct('acquireMode', 'cstring', 'bandwidth', 'cstring', 'clockType', 'cstring', 'delay', 'double', 'enabled', 'bool', 'label', 'cstring', 'recordLength', 'uint32', 'nbrSegments', 'uint32', 'nbrWaveforms', 'uint32', 'nbrRoundRobins', 'uint32', 'samplingRate', 'double', 'triggerCoupling', 'cstring', 'triggerLevel', 'double', 'triggerSlope', 'cstring', 'triggerSource', 'cstring', 'verticalCoupling', 'cstring', 'verticalOffset', 'double', 'verticalScale', 'double', 'bufferSize', 'uint32');
-structs.AcquisitionParams.members=struct('samplesPerAcquisition', 'uint32', 'numberAcquistions', 'uint32');
+structs.AcquisitionParams.members=struct('samplesPerAcquisition', 'uint32', 'numberAcquisitions', 'uint32');
 methodinfo=fcns;

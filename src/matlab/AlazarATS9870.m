@@ -136,7 +136,7 @@ classdef AlazarATS9870 < hgsetget
             end
 
             acq.samplesPerAcquisition = 0;
-            acq.numberAcquistions = 0;
+            acq.numberAcquisitions = 0;
             
             [ret,~,acq] = calllib('libAlazar','setAll',obj.address,conf,acq);
                         
@@ -145,7 +145,7 @@ classdef AlazarATS9870 < hgsetget
             end
             
             obj.settings.samplesPerAcquisition = acq.samplesPerAcquisition;
-            obj.settings.numberAcquistions = acq.numberAcquistions;
+            obj.settings.numberAcquisitions = acq.numberAcquisitions;
             
             %allocate the the data buffers
             obj.ch1Ptr = libpointer('singlePtr',single(zeros(1,obj.settings.samplesPerAcquisition)));
@@ -185,7 +185,7 @@ classdef AlazarATS9870 < hgsetget
         %Wait for the acquisition to complete 
         function wait_for_acquisition(obj, timeout)
 
-            for i=1:obj.settings.numberAcquistions
+            for i=1:obj.settings.numberAcquisitions
                 
                 ret = 0;
                 start=clock;
@@ -228,8 +228,8 @@ classdef AlazarATS9870 < hgsetget
             end
             
             if strcmp(obj.settings.acquireMode, 'averager')
-                obj.sumDataA = obj.sumDataA / obj.settings.numberAcquistions;
-                obj.sumDataB = obj.sumDataB / obj.settings.numberAcquistions;
+                obj.sumDataA = obj.sumDataA / obj.settings.numberAcquisitions;
+                obj.sumDataB = obj.sumDataB / obj.settings.numberAcquisitions;
             end
             
         end

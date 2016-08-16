@@ -268,7 +268,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
       acqParams.samplesPerAcquisition =
           recordLength * nbrSegments * nbrWaveforms * roundRobinsPerBuffer;
     }
-    acqParams.numberAcquistions = nbrBuffers;
+    acqParams.numberAcquisitions = nbrBuffers;
   } else {
     if (averager) {
       acqParams.samplesPerAcquisition = recordLength * nbrSegments;
@@ -276,12 +276,12 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
       acqParams.samplesPerAcquisition =
           recordLength * nbrSegments * nbrWaveforms;
     }
-    acqParams.numberAcquistions = nbrBuffers / buffersPerRoundRobin;
+    acqParams.numberAcquisitions = nbrBuffers / buffersPerRoundRobin;
   }
 
   samplesPerAcquisition = acqParams.samplesPerAcquisition;
   FILE_LOG(logINFO) << "samplesPerAcquisition: " << samplesPerAcquisition;
-  FILE_LOG(logINFO) << "numberAcquistions: " << acqParams.numberAcquistions;
+  FILE_LOG(logINFO) << "numberAcquisitions: " << acqParams.numberAcquisitions;
 
   return 0;
 }

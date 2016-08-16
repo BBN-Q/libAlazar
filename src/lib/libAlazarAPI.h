@@ -31,7 +31,7 @@ typedef struct ConfigData {
 
 typedef struct AcquisitionParams {
   uint32_t samplesPerAcquisition;
-  uint32_t numberAcquistions;
+  uint32_t numberAcquisitions;
 } AcquisitionParams_t;
 
 int32_t connectBoard(uint32_t boardID, const char *);
