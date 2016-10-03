@@ -2,7 +2,7 @@ before_script:
     - git submodule update --init
     
 ubuntuBuild:
-    image: eschiller/libalazar-builder
+    image: eschiller/libalazar-builder:v2
     script: 
         - mkdir build
         - cd build
