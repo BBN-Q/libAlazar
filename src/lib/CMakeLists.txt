@@ -37,7 +37,7 @@ endif()
 
 # used by runTests.cpp for command line options
 # use -DBOOST_ROOT=/path/to/boost for non-system boost and -DBoost_DEBUG=True to debug
-find_package(Boost 1.45.0 COMPONENTS program_options lockfree)
+find_package(Boost 1.45.0 COMPONENTS program_options)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 
 if(SIM)
