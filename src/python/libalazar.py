@@ -10,9 +10,9 @@ osType = platform.system()
 if 'Darwin' in osType:
     dll_name = '../../build/bin/libAlazar.dylib'
 elif 'Windows' in osType:
-    dll_name = '../lib/libAlazar.dll'
+    dll_name = '../../build/bin/libAlazar.dll'
 else:
-    dll_name = '../lib/libAlazar.so'
+    dll_name = '../../build/bin/libAlazar.so'
 
 dllabspath = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + dll_name
 lib = CDLL(dllabspath)
