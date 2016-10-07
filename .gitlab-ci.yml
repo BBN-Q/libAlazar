@@ -12,7 +12,7 @@ ubuntuBuild:
         - export LD_LIBRARY_PATH=./bin
         - cd ../src/python 
         - which python
-        - python apiTest.py 
+        - python -m unittest
         - cd ../../build
     #artifacts:
     #    - bin/*.so
@@ -30,7 +30,7 @@ windowsAPITest:
         - make clean install
         - cd ../src/python 
         - which python
-        - python apiTest.py 
+        - python -m unittest
         - cd ../../build
     tags:
         - windows
