@@ -87,7 +87,6 @@ class TestLib(unittest.TestCase):
             'verticalCoupling':'AC',
             'verticalOffset':0.0,
             'verticalScale':1.0,
-            'bufferSize':4000000,
         }
         self.ats9870=ATS9870('foo/1')
         
@@ -166,7 +165,6 @@ class TestLib(unittest.TestCase):
             'verticalCoupling':'AC',
             'verticalOffset':0.0,
             'verticalScale':1.0,
-            'bufferSize':4000000,
         }
         self.ats9870.setAll(self.config)
 

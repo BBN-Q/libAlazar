@@ -66,7 +66,6 @@ classdef AlazarATS9870 < hgsetget
             obj.settings.vertical.verticalCoupling   = 'AC';
             obj.settings.vertical.verticalOffset     = 0.0;
             obj.settings.vertical.verticalScale      = 4.0;
-            obj.settings.bufferSize                  = 4194304;
             
         end
         
@@ -129,11 +128,6 @@ classdef AlazarATS9870 < hgsetget
             conf.verticalOffset     = settings.vertical.verticalOffset;
             conf.verticalScale      = settings.vertical.verticalScale;
             
-            if isfield(settings,'bufferSize')
-                conf.bufferSize         = settings.bufferSize;
-            else
-                conf.bufferSize         = 4194304;
-            end
 
             acq.samplesPerAcquisition = 0;
             acq.numberAcquisitions = 0;

@@ -37,8 +37,6 @@ class ConfigData(Structure):
                 ("verticalCoupling",c_char_p),
                 ("verticalOffset",  c_double),
                 ("verticalScale",   c_double),
-                ("bufferSize",      c_uint32),
-
                ]
 
 class AcquisitionParams(Structure):
@@ -102,7 +100,6 @@ class ATS9870():
             'verticalCoupling':'AC',
             'verticalOffset':0.0,
             'verticalScale':1.0,
-            'bufferSize':4096000,
         }
 
         self.name = name.split('/')[0]
