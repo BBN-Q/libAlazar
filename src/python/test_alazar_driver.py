@@ -52,7 +52,6 @@ class TestAPI(AlazarDriverTest):
         self.verify_local_attribute(dlocal,'verticalCoupling','DC')
         self.verify_local_attribute(dlocal,'verticalOffset',10.0)
         self.verify_local_attribute(dlocal,'verticalScale',3.0)
-        self.verify_local_attribute(dlocal,'bufferSize',32768)
     
         dlocal.disconnect()
 
@@ -88,7 +87,7 @@ class TestLib(unittest.TestCase):
             'verticalCoupling':'AC',
             'verticalOffset':0.0,
             'verticalScale':1.0,
-            'bufferSize':8192,
+            'bufferSize':4000000,
         }
         self.ats9870=ATS9870('foo/1')
         
@@ -148,7 +147,7 @@ class TestLib(unittest.TestCase):
 
     def initConfig(self):
         #reset the config params
-        self.ats9870.config={
+        self.config={
             'acquireMode':'averager',
             'bandwidth':'Full',
             'clockType':'ref',
@@ -167,8 +166,9 @@ class TestLib(unittest.TestCase):
             'verticalCoupling':'AC',
             'verticalOffset':0.0,
             'verticalScale':1.0,
-            'bufferSize':8192,
+            'bufferSize':4000000,
         }
+        self.ats9870.setAll(self.config)
 
     def setUp(self):
         self.initConfig()
@@ -178,141 +178,112 @@ class TestLib(unittest.TestCase):
 
     def test_config(self):
         self.connect(self.test_config.__name__+'.log')
-        self.ats9870.setAll()
-        
-    
-    def test_single_record_too_large(self):
-        self.connect(self.test_single_record_too_large.__name__+'.log')
-        self.ats9870.config['bufferSize'] = 4096
-        with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
-
-    def test_max_buffer_size_exceeded(self):
-        self.connect(self.test_max_buffer_size_exceeded.__name__+'.log')
-        self.ats9870.config['bufferSize'] = 2**23
-        with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
-        
+        self.ats9870.setAll(self.config)
+                
     def test_record_length_alignment(self):
         self.connect(self.test_record_length_alignment.__name__+'.log')
-        self.ats9870.config['recordLength'] = 257
+        self.config['recordLength'] = 257
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
+            self.ats9870.setAll(self.config)
         
     def test_record_length_min(self):
         self.connect(self.test_record_length_min.__name__+'.log')
-        self.ats9870.config['recordLength'] = 255
+        self.config['recordLength'] = 255
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
+            self.ats9870.setAll(self.config)
         
     def test_one_round_robin_per_buffer(self):
         logFile = self.test_one_round_robin_per_buffer.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['recordLength'] = 1024
-        self.ats9870.config['nbrWaveforms'] = 4
-        self.ats9870.config['bufferSize'] = 8192
-        self.ats9870.setAll()
+        self.config['recordLength'] = 1024
+        self.config['nbrWaveforms'] = 4
+        self.ats9870.setAll(self.config)
         self.checkLog('roundRobinsPerBuffer',1,int)
-        self.ats9870.disconnect()
 
     def test_multiple_round_robins_per_buffer(self):
         logFile = self.test_multiple_round_robins_per_buffer.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['recordLength'] = 256
-        self.ats9870.config['nbrWaveforms'] = 4
-        self.ats9870.config['nbrRoundRobins'] = 32
-        self.ats9870.config['bufferSize'] = 8192
-        self.ats9870.setAll()
+        self.config['recordLength'] = 256
+        self.config['nbrWaveforms'] = 4
+        self.config['nbrRoundRobins'] = 32
+        self.ats9870.setAll(self.config)
         self.checkLog('roundRobinsPerBuffer',4,int)
         
     def test_multiple_buffers_per_round_robin(self):
         logFile = self.test_multiple_buffers_per_round_robin.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['recordLength'] = 4096
-        self.ats9870.config['nbrWaveforms'] = 3
-        self.ats9870.config['nbrRoundRobins'] = 3
-        self.ats9870.config['bufferSize'] = 8192
-        self.ats9870.setAll()
+        self.config['recordLength'] = 4096
+        self.config['nbrWaveforms'] = 3
+        self.config['nbrRoundRobins'] = 3
+        self.ats9870.setAll(self.config)
         self.checkLog('buffersPerRoundRobin',3,int)
         
     def test_mode_config(self):
         logFile = self.test_mode_config.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['acquireMode'] = 'avverager'
+        self.ats9870.acquireMode = 'avverager'
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
-        self.initConfig()
+            self.ats9870.acquire()
 
     def test_channel_coupling(self):
         logFile = self.test_channel_coupling.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['verticalCoupling'] = 'ac'
+        self.ats9870.verticalCoupling = 'ac'
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
+            self.ats9870.acquire()
 
     def test_trigger_coupling(self):
         logFile = self.test_trigger_coupling.__name__+'.log'
         self.connect(logFile)
         self.ats9870.config['triggerCoupling'] = 'ac'
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
+            self.ats9870.acquire()
         
     def test_trigger_source(self):
         logFile = self.test_trigger_source.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['triggerSource'] = 'ext'
+        self.ats9870.triggerSource = 'ext'
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
+            self.ats9870.acquire()
         
     def test_trigger_slope(self):
         logFile = self.test_trigger_slope.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['triggerSource'] = 'rising'
+        self.ats9870.triggerSource = 'rising'
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
+            self.ats9870.acquire()
         
     def test_trigger_bandwidth(self):
         logFile = self.test_trigger_bandwidth.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['bandwidth'] = ''
+        self.ats9870.bandwidth = ''
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
+            self.ats9870.acquire()
         
     def test_channel_scale(self):
         logFile = self.test_channel_scale.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['verticalScale'] = 99.0
+        self.ats9870.verticalScale = 99.0
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
-        
-        self.ats9870.config['verticalScale'] = 2.0
-        self.ats9870.setAll()
+            self.ats9870.acquire()
         
     def test_sample_rate(self):
         logFile = self.test_sample_rate.__name__+'.log'
         self.connect(logFile)
-        self.ats9870.config['samplingRate'] = 59e6
+        self.ats9870.samplingRate = 59e6
         with self.assertRaises(AlazarError):
-            self.ats9870.setAll()
+            self.ats9870.acquire()
         
-        self.ats9870.config['samplingRate'] = 500e6
-        self.ats9870.setAll()
-
     def test_digitizer(self):        
         logFile = self.test_digitizer.__name__+'.log'
         
         self.connect(logFile)
         
-        self.ats9870.config['acquireMode']      = 'digitizer'
-        self.ats9870.config['recordLength']     = 1024
-        self.ats9870.config['nbrWaveforms']     = 3
-        self.ats9870.config['nbrSegments']      = 5
-        self.ats9870.config['nbrRoundRobins']   = 3
-        
-        #configure for using exactly 3 buffers
-        self.ats9870.config['bufferSize']       = 1024*2*3*5
-        
-        self.ats9870.setAll()
+        self.ats9870.acquireMode      = 'digitizer'
+        self.ats9870.recordLength     = 1024
+        self.ats9870.nbrWaveforms     = 3
+        self.ats9870.nbrSegments      = 5
+        self.ats9870.nbrRoundRobins   = 3
         
         self.ats9870.acquire()
         
@@ -324,18 +295,13 @@ class TestLib(unittest.TestCase):
         
         self.connect(logFile)
         
-        self.ats9870.config['acquireMode']      = 'averager'
-        self.ats9870.config['recordLength']     = 1024
-        self.ats9870.config['nbrWaveforms']     = 5
-        self.ats9870.config['nbrSegments']      = 3
+        self.ats9870.acquireMode      = 'averager'
+        self.ats9870.recordLength     = 1024
+        self.ats9870.nbrWaveforms     = 5
+        self.ats9870.nbrSegments      = 3
         
         #pattern generator currently only supports 1 round robin
-        self.ats9870.config['nbrRoundRobins']   = 1
-        
-        #configure for using exactly 3 buffers
-        self.ats9870.config['bufferSize']       = 1024*5*3*3*2
-        
-        self.ats9870.setAll()
+        self.ats9870.nbrRoundRobins   = 1
         
         self.ats9870.acquire()
         
@@ -347,16 +313,11 @@ class TestLib(unittest.TestCase):
         
         self.connect(logFile)
         
-        self.ats9870.config['acquireMode']      = 'digitizer'
-        self.ats9870.config['recordLength']     = 1024
-        self.ats9870.config['nbrWaveforms']     = 7
-        self.ats9870.config['nbrSegments']      = 9
-        self.ats9870.config['nbrRoundRobins']   = 1
-        
-        #configure for 21 buffers per round robin
-        self.ats9870.config['bufferSize']       = 1024*2*3
-        
-        self.ats9870.setAll()
+        self.ats9870.acquireMode      = 'digitizer'
+        self.ats9870.recordLength     = 1024
+        self.ats9870.nbrWaveforms     = 7
+        self.ats9870.nbrSegments      = 9
+        self.ats9870.nbrRoundRobins   = 1
         
         self.ats9870.acquire()
         
@@ -368,16 +329,11 @@ class TestLib(unittest.TestCase):
         
         self.connect(logFile)
         
-        self.ats9870.config['acquireMode']      = 'averager'
-        self.ats9870.config['recordLength']     = 1024
-        self.ats9870.config['nbrWaveforms']     = 7
-        self.ats9870.config['nbrSegments']      = 9
-        self.ats9870.config['nbrRoundRobins']   = 1
-        
-        #configure for 21 buffers per round robin
-        self.ats9870.config['bufferSize']       = 1024*2*3
-        
-        self.ats9870.setAll()
+        self.ats9870.acquireMode      = 'averager'
+        self.ats9870.recordLength     = 1024
+        self.ats9870.nbrWaveforms     = 7
+        self.ats9870.nbrSegments      = 9
+        self.ats9870.nbrRoundRobins   = 1
         
         self.ats9870.acquire()
         

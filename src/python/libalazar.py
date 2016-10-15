@@ -241,7 +241,21 @@ class ATS9870():
             self.raiseError('ERROR %s: connectBoard failed'%self.name)
         return retVal
 
-    def setAll(self):
+    def setAll(self, config):
+        
+        for param in self.config.keys():
+            if param not in config.keys():
+                self.raiseError('ERROR: config is missing %s'%param)
+        
+        for param in config.keys():
+            if param in self.config.keys():
+                self.writeConfig(param,config[param])
+            else:
+                self.raiseError('ERROR: %s is not a config parameter'%param)
+        
+        self.configureBoard()
+          
+    def configureBoard(self):
 
         self.configData = ConfigData()
         fieldNames = [ name for name, ftype in ConfigData._fields_]
@@ -268,6 +282,7 @@ class ATS9870():
         self.ch2Buffer_p = self.ch2Buffer.ctypes.data_as(POINTER(c_float))
 
     def acquire(self):
+        self.configureBoard()
         retVal = _acquire(self.addr)
         if retVal < 0:
             self.raiseError('ERROR %s: acquire failed'%self.name)
