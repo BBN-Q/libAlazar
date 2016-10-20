@@ -43,12 +43,6 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     return -1;
   }
 
-  if (config.bufferSize > MAX_BUFFER_SIZE) {
-    FILE_LOG(logERROR) << "MAX_BUFFER_SIZE Exceeded: " << config.bufferSize
-                       << " < " << MAX_BUFFER_SIZE;
-    return -1;
-  }
-
   // set averager mode or digitizer mode
   const char *acquireModeKey = config.acquireMode;
   if (modeMap.find(acquireModeKey) == modeMap.end()) {
@@ -252,8 +246,6 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   nbrSegments = config.nbrSegments;
   nbrWaveforms = config.nbrWaveforms;
   nbrRoundRobins = config.nbrRoundRobins;
-  bufferSize = config.bufferSize;
-  FILE_LOG(logINFO) << "allocated bufferSize: " << bufferSize;
 
   // compute records per buffer and records per acquisition
   if (getBufferSize() < 0) {
@@ -282,6 +274,9 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   samplesPerAcquisition = acqParams.samplesPerAcquisition;
   FILE_LOG(logINFO) << "samplesPerAcquisition: " << samplesPerAcquisition;
   FILE_LOG(logINFO) << "numberAcquisitions: " << acqParams.numberAcquisitions;
+  
+  ch1WorkBuff = new std::vector<float>(samplesPerAcquisition);
+  ch2WorkBuff = new std::vector<float>(samplesPerAcquisition);
 
   return 0;
 }
@@ -414,7 +409,7 @@ int32_t AlazarATS9870::postBuffer(shared_ptr<std::vector<uint8_t>> buff) {
 int32_t AlazarATS9870::getBufferSize(void) {
 
   // need to fit at least one record in a buffer
-  if (recordLength * numChannels > bufferSize) {
+  if (recordLength * numChannels > MAX_BUFFER_SIZE) {
     FILE_LOG(logERROR) << "SINGLE RECORD TO LARGE FOR THE BUFFER";
     return (-1);
   }
@@ -435,7 +430,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
        rr != rrFactors.end(); ++rr) {
     uint64_t bufferSizeTest =
         recordLength * nbrSegments * nbrWaveforms * *rr * numChannels;
-    if (bufferSizeTest <= bufferSize) {
+    if (bufferSizeTest <= MAX_BUFFER_SIZE) {
       roundRobinsPerBuffer = *rr;
       FILE_LOG(logINFO) << "roundRobinsPerBuffer: " << roundRobinsPerBuffer;
       break;
@@ -504,8 +499,8 @@ int32_t AlazarATS9870::getBufferSize(void) {
   FILE_LOG(logINFO) << "buffersPerRoundRobin: " << buffersPerRoundRobin;
 
   if (buffersPerRoundRobin * recordsPerBuffer * recordLength >
-      MAX_WORK_BUFFER_SIZE) {
-    FILE_LOG(logERROR) << " Exeeded MAX_WORK_BUFFER_SIZE";
+      MAX_BUFFER_SIZE) {
+    FILE_LOG(logERROR) << " Exeeded MAX_BUFFER_SIZE";
     return (-1);
   }
 
@@ -577,11 +572,15 @@ int32_t AlazarATS9870::processPartialBuffer(
   uint8_t *buff = static_cast<uint8_t *>(buffPtr.get()->data());
 
   if (averager) {
-
+      
+      
+     float *pCh1Work =  ch1WorkBuff->data();
+     float *pCh2Work =  ch2WorkBuff->data();
+     
     // process the buff into the work buffer and if it is the last buffer
     // in the round robin, run the averager
-    float *pCh1 = (float *)(ch1WorkBuff.data() + bufferLen * partialIndex / 2);
-    float *pCh2 = (float *)(ch2WorkBuff.data() + bufferLen * partialIndex / 2);
+    float *pCh1 = (float *)( pCh1Work + bufferLen * partialIndex / 2);
+    float *pCh2 = (float *)( pCh1Work + bufferLen * partialIndex / 2);
 
     for (uint32_t i = 0; i < bufferLen / 2; i++) {
       pCh1[i] = counts2Volts * (buff[2 * i] - 128) - channelOffset;
@@ -603,8 +602,8 @@ int32_t AlazarATS9870::processPartialBuffer(
         for (uint32_t j = 0; j < nj; j++) {
           for (uint32_t i = 0; i < ni; i++) {
             // ch1 and ch2 samples are interleaved for faster transfer times
-            ch1[i + k * ni] += ch1WorkBuff[i + j * ni + k * ni * nj];
-            ch2[i + k * ni] += ch2WorkBuff[i + j * ni + k * ni * nj];
+            ch1[i + k * ni] += pCh1Work[i + j * ni + k * ni * nj];
+            ch2[i + k * ni] += pCh2Work[i + j * ni + k * ni * nj];
           }
         }
       }

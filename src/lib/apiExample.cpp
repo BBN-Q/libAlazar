@@ -79,7 +79,6 @@ int main(int argc, char *argv[]) {
       "AC",     // channel coupling - "AC" or "DC"
       0.0,      // channel offset
       4.0,      // channel scale
-      4096 * 2, // max buffer size
   };
 
   config.acquireMode = vm["mode"].as<std::string>().c_str();
@@ -87,7 +86,6 @@ int main(int argc, char *argv[]) {
   config.nbrSegments = vm["segments"].as<uint32_t>();
   config.nbrWaveforms = vm["waveforms"].as<uint32_t>();
   config.nbrRoundRobins = vm["roundrobins"].as<uint32_t>();
-  config.bufferSize = vm["buffer"].as<uint32_t>();
   config.samplingRate = vm["samplingRate"].as<float>();
 
   AcquisitionParams_t acqParams;

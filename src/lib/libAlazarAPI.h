@@ -26,7 +26,6 @@ typedef struct ConfigData {
   const char *verticalCoupling;
   double verticalOffset;
   double verticalScale;
-  uint32_t bufferSize;
 } ConfigData_t;
 
 typedef struct AcquisitionParams {
