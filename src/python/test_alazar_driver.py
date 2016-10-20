@@ -59,7 +59,7 @@ class TestAPI(AlazarDriverTest):
 
         dlocal=ATS9870('foo/1')
         dlocal.connectBoard()
-        dlocal.setAll()
+        dlocal.setAll(dlocal.config)
         dlocal.acquire()
         dlocal.waitForAcquisition()
         dlocal.disconnect()
