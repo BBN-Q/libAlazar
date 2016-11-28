@@ -239,21 +239,20 @@ class ATS9870():
         return retVal
 
     def setAll(self, config):
-        
+
         for param in self.config.keys():
             if param not in config.keys():
                 self.raiseError('ERROR: config is missing %s'%param)
-        
+
         for param in config.keys():
             if param in self.config.keys():
                 self.writeConfig(param,config[param])
             else:
                 self.raiseError('ERROR: %s is not a config parameter'%param)
-        
-        self.configureBoard()
-          
-    def configureBoard(self):
 
+        self.configureBoard()
+
+    def configureBoard(self):
         self.configData = ConfigData()
         fieldNames = [ name for name, ftype in ConfigData._fields_]
 
@@ -284,7 +283,7 @@ class ATS9870():
         if retVal < 0:
             self.raiseError('ERROR %s: acquire failed'%self.name)
 
-    def waitForAcquisition(self):
+    def wait_for_acquisition(self):
         while True:
             status = _wait_for_acquisition(self.addr,self.ch1Buffer_p, self.ch2Buffer_p)
             if status == 0:
@@ -293,6 +292,11 @@ class ATS9870():
                 self.raiseError('ERROR %s: acquire failed'%self.name)
             else:
                 return self.ch1Buffer, self.ch2Buffer
+
+    def stop(self):
+        retVal = _stop(self.addr)
+        if retVal < 0:
+            self.raiseError('ERROR %s: stop failed' % self.name)
 
     def disconnect(self):
         retVal = _disconnect(self.addr)
