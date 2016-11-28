@@ -35,8 +35,8 @@ enum optionIndex {
   RECORDLENGTH,
   BUFFER,
   SAMPLINGRATE,
-  TIMEOUT
-  LOG_LEVEL
+  TIMEOUT,
+  LOGGING_LEVEL
 };
 const option::Descriptor usage[] = {
     {UNKNOWN, 0, "", "", option::Arg::None, "USAGE: apiExample [options]\n\n"
@@ -59,7 +59,7 @@ const option::Descriptor usage[] = {
      "  --samplingRate\tSampling rate (default = 500e6)"},
     {TIMEOUT, 0, "", "timeout", option::Arg::Numeric,
      "  --timeout\tTimeout in milliseconds (default = 1000)"},
-    {LOG_LEVEL, 0, "", "logLevel", option::Arg::Numeric,
+    {LOGGING_LEVEL, 0, "", "logLevel", option::Arg::Numeric,
      "	--logLevel	\t(optional) Logging level level to print to console "
      "(optional; default=2/INFO)."},
     {UNKNOWN, 0, "", "", option::Arg::None,
@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
 
   // Logging level
   // TLogLevel logLevel = logINFO;
-  // if (options[LOG_LEVEL]) {
-  //   logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+  // if (options[LOGGING_LEVEL]) {
+  //   logLevel = TLogLevel(atoi(options[LOGGING_LEVEL].arg));
   // }
 
   // todo - make more parameters user configurable
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     config.acquireMode = options[MODE].arg;
   }
   if (options[RECORDLENGTH]) {
-    config.recordlength = atoi(options[RECORDLENGTH].arg);
+    config.recordLength = atoi(options[RECORDLENGTH].arg);
   }
   if (options[SEGMENTS]) {
     config.nbrSegments = atoi(options[SEGMENTS].arg);
