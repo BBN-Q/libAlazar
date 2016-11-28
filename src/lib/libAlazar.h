@@ -3,7 +3,6 @@
 
 #include <array>
 #include <atomic>
-#include <boost/lockfree/spsc_queue.hpp>
 #include <iostream>
 #include <map>
 #include <mutex>

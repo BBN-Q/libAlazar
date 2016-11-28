@@ -1,4 +1,3 @@
-#include <boost/lockfree/spsc_queue.hpp>
 #include <cstdlib>
 #include <map>
 #include <math.h>
@@ -6,13 +5,14 @@
 #include <thread>
 #include <unistd.h>
 
+#include "logger.h"
+#include "readerwriterqueue.h"
+
 #include "AlazarApi.h"
 #include "libAlazar.h"
-#include "logger.h"
 
-static boost::lockfree::spsc_queue<int8_t *,
-                                   boost::lockfree::capacity<MAX_NUM_BUFFERS>>
-    bufferQ;
+using namespace moodycamel;
+static ReaderWriterQueue<int8_t *, MAX_NUM_BUFFERS> bufferQ;
 
 uint32_t dummyBoard;
 uint32_t recordSize;
@@ -23,7 +23,7 @@ uint32_t recordCounter = 0;
 
 RETURN_CODE AlazarPostAsyncBuffer(HANDLE hDevice, void *pBuffer,
                                   U32 uBufferLength_bytes) {
-  while (!bufferQ.push(static_cast<int8_t *>(pBuffer)))
+  while (!bufferQ.try_enqueue(static_cast<int8_t *>(pBuffer)))
     ;
 
   bufferLenBytes = uBufferLength_bytes;
@@ -33,7 +33,7 @@ RETURN_CODE AlazarPostAsyncBuffer(HANDLE hDevice, void *pBuffer,
 RETURN_CODE AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
                                           U32 uTimeout_ms) {
   int8_t *temp;
-  while (!bufferQ.pop(temp))
+  while (!bufferQ.try_dequeue(temp))
     ;
   if (temp == pBuffer) {
     // fill in with some dummy data
