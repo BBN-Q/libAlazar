@@ -35,15 +35,10 @@ else()
     ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 endif()
 
-# used by runTests.cpp for command line options
-# use -DBOOST_ROOT=/path/to/boost for non-system boost and -DBoost_DEBUG=True to debug
-find_package(Boost 1.45.0 COMPONENTS program_options)
-INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
-
 if(SIM)
 	#an alazar simulator is used for testing purposes
 	ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
-  set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+	set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 	TARGET_LINK_LIBRARIES(Alazar
 		AlazarSim
     Threads::Threads
@@ -60,7 +55,6 @@ ADD_EXECUTABLE(apiExample
 
 TARGET_LINK_LIBRARIES(apiExample
 	Alazar
-	${Boost_LIBRARIES}
 	Threads::Threads
 
 )

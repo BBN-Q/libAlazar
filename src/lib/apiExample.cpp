@@ -1,5 +1,3 @@
-#include <boost/program_options.hpp>
-#include <boost/program_options/variables_map.hpp>
 #include <chrono>
 #include <iostream>
 #include <map>
@@ -7,11 +5,11 @@
 #include <thread>
 #include <unistd.h>
 
+#include "optionparser.h"
+
 #include "libAlazarAPI.h"
 #include "libAlazarConfig.h"
 #include "logger.h"
-
-using namespace boost::program_options;
 
 void waitForQuit(void) {
   std::string line;
@@ -28,38 +26,79 @@ void waitForQuit(void) {
   return;
 }
 
+enum optionIndex {
+  UNKNOWN,
+  HELP,
+  MODE,
+  SEGMENTS,
+  WAVEFORMS,
+  ROUNDROBINS,
+  RECORDLENGTH,
+  BUFFER,
+  SAMPLINGRATE,
+  TIMEOUT
+  LOG_LEVEL
+};
+const option::Descriptor usage[] = {
+    {UNKNOWN, 0, "", "", option::Arg::None, "USAGE: apiExample [options]\n\n"
+                                            "Options:"},
+    {HELP, 0, "", "help", option::Arg::None,
+     "	--help	\tPrint usage and exit."},
+    {MODE, 0, "", "mode", option::Arg::None,
+     "  --mode\tAcquisition mode, 'digitizer' or 'averager' (default)"},
+    {SEGMENTS, 0, "", "segments", option::Arg::Numeric,
+     "  --segments\tNumber of segments (default = 1)"},
+    {WAVEFORMS, 0, "", "waveforms", option::Arg::Numeric,
+     "  --waveforms\tNumber of waveforms (default = 1)"},
+    {ROUNDROBINS, 0, "", "roundrobins", option::Arg::Numeric,
+     "  --roundrobins\tNumber of round robins (default = 1)"},
+    {RECORDLENGTH, 0, "", "samples", option::Arg::Numeric,
+     "  --samples\tNumber of samples (default = 4096)"},
+    {BUFFER, 0, "", "buffer", option::Arg::Numeric,
+     "  --buffer\tBuffer size (default = 4096 * 2)"},
+    {SAMPLINGRATE, 0, "", "samplingRate", option::Arg::Numeric,
+     "  --samplingRate\tSampling rate (default = 500e6)"},
+    {TIMEOUT, 0, "", "timeout", option::Arg::Numeric,
+     "  --timeout\tTimeout in milliseconds (default = 1000)"},
+    {LOG_LEVEL, 0, "", "logLevel", option::Arg::Numeric,
+     "	--logLevel	\t(optional) Logging level level to print to console "
+     "(optional; default=2/INFO)."},
+    {UNKNOWN, 0, "", "", option::Arg::None,
+     "\nExamples:\n"
+     "\tapiExample --samples=2048\n"
+     "\tapiExample --samples=2048 --segments=10\n"},
+    {0, 0, 0, 0, 0, 0}};
+
 int main(int argc, char *argv[]) {
 
-  variables_map vm;
-  try {
-    options_description desc{"Options"};
-    desc.add_options()("help,h", "Help screen")(
-        "mode", value<std::string>()->default_value("averager"),
-        "acquire Mode")("segments", value<uint32_t>()->default_value(1),
-                        "number of segments")(
-        "waveforms", value<uint32_t>()->default_value(1),
-        "number of waveforms")("roundrobins",
-                               value<uint32_t>()->default_value(1),
-                               "number of roundrobins")(
-        "recordlength", value<uint32_t>()->default_value(4096),
-        "record length")("buffer", value<uint32_t>()->default_value(4096 * 2),
-                         "buffer size")(
-        "samplingRate", value<float>()->default_value(500e6), "sample rate")(
-        "timeout", value<uint32_t>()->default_value(1000), "timeout in ms");
+  argc -= (argc > 0);
+  argv += (argc > 0); // skip program name argv[0] if present
+  option::Stats stats(usage, argc, argv);
+  option::Option *options = new option::Option[stats.options_max];
+  option::Option *buffer = new option::Option[stats.buffer_max];
+  option::Parser parse(usage, argc, argv, options, buffer);
 
-    store(parse_command_line(argc, argv, desc), vm);
-    notify(vm);
+  if (parse.error())
+    return -1;
 
-    if (vm.count("help")) {
-      std::cout << desc << '\n';
-      exit(0);
-    }
-
-  } catch (const error &ex) {
-    std::cerr << ex.what() << '\n';
+  if (options[HELP] || argc == 0) {
+    option::printUsage(std::cout, usage);
+    return 0;
   }
 
-  // todo - make parameters user configurable
+  for (option::Option *opt = options[UNKNOWN]; opt; opt = opt->next())
+    std::cout << "Unknown option: " << opt->name << "\n";
+
+  for (int i = 0; i < parse.nonOptionsCount(); ++i)
+    std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
+
+  // Logging level
+  // TLogLevel logLevel = logINFO;
+  // if (options[LOG_LEVEL]) {
+  //   logLevel = TLogLevel(atoi(options[LOG_LEVEL].arg));
+  // }
+
+  // todo - make more parameters user configurable
   ConfigData_t config = {
       "averager", // acquire mode - "digitizer" or "averager"
       "Full",     // bandwidth - "Full" or "20MHz"
@@ -81,12 +120,28 @@ int main(int argc, char *argv[]) {
       4.0,      // channel scale
   };
 
-  config.acquireMode = vm["mode"].as<std::string>().c_str();
-  config.recordLength = vm["recordlength"].as<uint32_t>();
-  config.nbrSegments = vm["segments"].as<uint32_t>();
-  config.nbrWaveforms = vm["waveforms"].as<uint32_t>();
-  config.nbrRoundRobins = vm["roundrobins"].as<uint32_t>();
-  config.samplingRate = vm["samplingRate"].as<float>();
+  if (options[MODE]) {
+    config.acquireMode = options[MODE].arg;
+  }
+  if (options[RECORDLENGTH]) {
+    config.recordlength = atoi(options[RECORDLENGTH].arg);
+  }
+  if (options[SEGMENTS]) {
+    config.nbrSegments = atoi(options[SEGMENTS].arg);
+  }
+  if (options[WAVEFORMS]) {
+    config.nbrWaveforms = atoi(options[WAVEFORMS].arg);
+  }
+  if (options[ROUNDROBINS]) {
+    config.nbrRoundRobins = atoi(options[ROUNDROBINS].arg);
+  }
+  if (options[SAMPLINGRATE]) {
+    config.samplingRate = atof(options[SAMPLINGRATE].arg);
+  }
+  int timeout = 1000;
+  if (options[TIMEOUT]) {
+    timeout = atoi(options[TIMEOUT].arg);
+  }
 
   AcquisitionParams_t acqParams;
 
@@ -111,20 +166,19 @@ int main(int argc, char *argv[]) {
 
 #if 1
   uint32_t count = 0;
-  uint32_t timeout = 0;
+  uint32_t buffer_timeout = 0;
   while (count < acqParams.numberAcquisitions) {
     // printf("rr %d count %d\n",config.nbrRoundRobins,count);
     force_trigger(1);
     fflush(stdout);
-    if( wait_for_acquisition(1,ch1, ch2) )
-    {
-        timeout=0;
-        count++;
-        fwrite(ch1,sizeof(float),acqParams.samplesPerAcquisition,f1);
-        fwrite(ch2,sizeof(float),acqParams.samplesPerAcquisition,f2);
+    if( wait_for_acquisition(1,ch1, ch2) ) {
+      buffer_timeout=0;
+      count++;
+      fwrite(ch1,sizeof(float),acqParams.samplesPerAcquisition,f1);
+      fwrite(ch2,sizeof(float),acqParams.samplesPerAcquisition,f2);
     }
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
-    if (timeout++ > vm["timeout"].as<uint32_t>())
+    if (buffer_timeout++ > timeout)
       break;
   }
 #endif
