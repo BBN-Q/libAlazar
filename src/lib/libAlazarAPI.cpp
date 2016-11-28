@@ -9,7 +9,6 @@
 #include <unistd.h>
 
 #include "libAlazar.h"
-#include "libAlazarConfig.h"
 #include "logger.h"
 #include "version.h"
 

@@ -8,7 +8,6 @@
 #include "optionparser.h"
 
 #include "libAlazarAPI.h"
-#include "libAlazarConfig.h"
 #include "logger.h"
 
 void waitForQuit(void) {
