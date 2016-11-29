@@ -41,7 +41,7 @@ class ConfigData(Structure):
 
 class AcquisitionParams(Structure):
     _fields_ = [("samplesPerAcquisition", c_uint32),
-                ("numberAcquistions",     c_uint32)]
+                ("numberAcquisitions",     c_uint32)]
 
 _connectBoard = lib.connectBoard
 _connectBoard.argtypes = [c_uint32,c_char_p]
@@ -268,7 +268,7 @@ class ATS9870():
         if retVal < 0:
             self.raiseError('ERROR %s: setAll failed'%self.name)
 
-        self.numberAcquistions     = self.acquisitionParams.numberAcquistions
+        self.numberAcquisitions     = self.acquisitionParams.numberAcquisitions
         self.samplesPerAcquisition = self.acquisitionParams.samplesPerAcquisition
 
         self.ch1Buffer   = np.zeros(self.samplesPerAcquisition,dtype=np.float32)
