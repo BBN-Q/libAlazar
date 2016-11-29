@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   if (options[SAMPLINGRATE]) {
     config.samplingRate = atof(options[SAMPLINGRATE].arg);
   }
-  int timeout = 1000;
+  uint32_t timeout = 1000;
   if (options[TIMEOUT]) {
     timeout = atoi(options[TIMEOUT].arg);
   }

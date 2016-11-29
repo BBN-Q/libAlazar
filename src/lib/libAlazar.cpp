@@ -274,7 +274,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   samplesPerAcquisition = acqParams.samplesPerAcquisition;
   FILE_LOG(logINFO) << "samplesPerAcquisition: " << samplesPerAcquisition;
   FILE_LOG(logINFO) << "numberAcquisitions: " << acqParams.numberAcquisitions;
-  
+
   ch1WorkBuff = new std::vector<float>(samplesPerAcquisition);
   ch2WorkBuff = new std::vector<float>(samplesPerAcquisition);
 
@@ -531,14 +531,12 @@ AlazarATS9870::processBuffer(std::shared_ptr<std::vector<uint8_t>> buffPtr,
         for (uint32_t j = 0; j < nj; j++) {
           for (uint32_t i = 0; i < ni; i++) {
             // ch1 and ch2 samples are interleaved for faster transfer times
-            ch1[i + k * ni] +=
-                counts2Volts * (buff[2 * i + j * 2 * ni + k * 2 * ni * nj +
-                                     l * 2 * ni * nj * nk] -
+            ch1[i + k*ni] +=
+                counts2Volts * (buff[2*i + j*2*ni + k*2*ni*nj + l*2*ni*nj*nk] -
                                 128) -
                 channelOffset;
-            ch2[i + k * ni] +=
-                counts2Volts * (buff[2 * i + 1 + j * 2 * ni + k * 2 * ni * nj +
-                                     l * 2 * ni * nj * nk] -
+            ch2[i + k*ni] +=
+                counts2Volts * (buff[2*i + 1 + j*2*ni + k*2*ni*nj + l*2*ni*nj*nk] -
                                 128) -
                 channelOffset;
           }
@@ -551,8 +549,7 @@ AlazarATS9870::processBuffer(std::shared_ptr<std::vector<uint8_t>> buffPtr,
       ch1[i] /= denom;
       ch2[i] /= denom;
     }
-  } else // digitizer mode
-  {
+  } else { // digitizer mode
     for (uint32_t i = 0; i < bufferLen / 2; i++) {
       ch1[i] = counts2Volts * (buff[2 * i] - 128) - channelOffset;
       ch2[i] = counts2Volts * (buff[2 * i + 1] - 128) - channelOffset;
@@ -572,11 +569,9 @@ int32_t AlazarATS9870::processPartialBuffer(
   uint8_t *buff = static_cast<uint8_t *>(buffPtr.get()->data());
 
   if (averager) {
-      
-      
      float *pCh1Work =  ch1WorkBuff->data();
      float *pCh2Work =  ch2WorkBuff->data();
-     
+
     // process the buff into the work buffer and if it is the last buffer
     // in the round robin, run the averager
     float *pCh1 = (float *)( pCh1Work + bufferLen * partialIndex / 2);
