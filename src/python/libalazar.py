@@ -67,6 +67,9 @@ _wait_for_acquisition = lib.wait_for_acquisition
 _wait_for_acquisition.argtypes = [c_uint32,POINTER(c_float),POINTER(c_float)]
 _wait_for_acquisition.restype = c_int32
 
+_force_trigger = lib.force_trigger
+_force_trigger.argtypes = [c_uint32]
+_force_trigger.restype = c_int32
 
 class AlazarError(Exception):
     def __init__(self, msg):
@@ -302,6 +305,11 @@ class ATS9870():
         retVal = _disconnect(self.addr)
         if retVal < 0:
             self.raiseError('ERROR %s: disconnect failed'%self.name)
+
+    def trigger(self):
+        retVal = _force_trigger(self.addr)
+        if retVal < 0:
+            self.raiseError('ERROR %s: trigger failed' % self.name)
 
     def generateTestPattern(self):
 
