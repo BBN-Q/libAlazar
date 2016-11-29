@@ -1,3 +1,6 @@
 [submodule "deps/Catch"]
 	path = deps/Catch
 	url = https://github.com/philsquared/Catch.git
+[submodule "deps/readerwriterqueue"]
+	path = deps/readerwriterqueue
+	url = https://github.com/cameron314/readerwriterqueue.git

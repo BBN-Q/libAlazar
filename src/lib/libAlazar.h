@@ -3,7 +3,6 @@
 
 #include <array>
 #include <atomic>
-#include <boost/lockfree/spsc_queue.hpp>
 #include <iostream>
 #include <map>
 #include <mutex>
@@ -17,7 +16,6 @@
 #include "AlazarError.h"
 #include "alazarBuff.h"
 #include "libAlazarAPI.h"
-#include "libAlazarConfig.h"
 
 #define MAX_NUM_BUFFERS 32
 #define MIN_NUM_BUFFERS 2
