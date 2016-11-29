@@ -286,15 +286,11 @@ class ATS9870():
         if retVal < 0:
             self.raiseError('ERROR %s: acquire failed'%self.name)
 
-    def wait_for_acquisition(self):
-        while True:
-            status = _wait_for_acquisition(self.addr,self.ch1Buffer_p, self.ch2Buffer_p)
-            if status == 0:
-                continue
-            elif status < 0:
-                self.raiseError('ERROR %s: acquire failed'%self.name)
-            else:
-                return self.ch1Buffer, self.ch2Buffer
+    def data_available(self):
+        status = _wait_for_acquisition(self.addr, self.ch1Buffer_p, self.ch2Buffer_p)
+        if status < 0:
+            self.raiseError('ERROR %s: data_available failed' % self.name)
+        return status
 
     def stop(self):
         retVal = _stop(self.addr)

@@ -72,6 +72,7 @@ int32_t acquire(uint32_t boardId) {
   return ret;
 }
 
+// returns 0 (no new data) or 1 (new data)
 int32_t wait_for_acquisition(uint32_t boardId, float *ch1, float *ch2) {
   AlazarATS9870 &board = boards[boardId - 1];
 
