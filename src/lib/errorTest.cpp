@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <unistd.h>
+#include <cstring>
 
 #include "AlazarError.h"
 #include "libAlazar.h"
