@@ -79,10 +79,9 @@ class AlazarError(Exception):
     def __str__(self):
         return self.msg
 
-
 class ATS9870():
 
-    def __init__(self,name,dst=None,logFile='alazar.log',bufferType='raw'):
+    def __init__(self,logFile='alazar.log',bufferType='raw'):
 
         self.config={
             'acquireMode':'averager',
@@ -105,13 +104,17 @@ class ATS9870():
             'verticalScale':1.0,
         }
 
-        self.name = name.split('/')[0]
-        self.addr = np.uint32(name.split('/')[1])
         self.logFile = logFile
         self.bufferType = bufferType
 
-    def raiseError(self,msg):
-        raise AlazarError(msg)
+    def connect(self, name):
+        self.name = name.split('/')[0]
+        self.addr = np.uint32(name.split('/')[1])
+
+        retVal = _connectBoard(self.addr,self.logFile.encode('ascii'));
+        if retVal < 0:
+            raise AlazarError('ERROR %s: connectBoard failed'%self.name)
+        return retVal
 
     #todo - anyway to automate creating the get/set methods?
     def set_acqireMode(self,value):
@@ -234,24 +237,17 @@ class ATS9870():
     def readConfig(self,param):
         return self.config[param]
 
-    #todo - check return codes from API calls
-    def connectBoard(self):
-        retVal = _connectBoard(self.addr,self.logFile.encode('ascii'));
-        if retVal < 0:
-            self.raiseError('ERROR %s: connectBoard failed'%self.name)
-        return retVal
-
     def setAll(self, config):
 
         for param in self.config.keys():
             if param not in config.keys():
-                self.raiseError('ERROR: config is missing %s'%param)
+                raise AlazarError('ERROR: config is missing %s'%param)
 
         for param in config.keys():
             if param in self.config.keys():
                 self.writeConfig(param,config[param])
             else:
-                self.raiseError('ERROR: %s is not a config parameter'%param)
+                raise AlazarError('ERROR: %s is not a config parameter'%param)
 
         self.configureBoard()
 
@@ -269,7 +265,7 @@ class ATS9870():
 
         retVal = _setAll(self.addr,byref(self.configData),byref(self.acquisitionParams))
         if retVal < 0:
-            self.raiseError('ERROR %s: setAll failed'%self.name)
+            raise AlazarError('ERROR %s: setAll failed'%self.name)
 
         self.numberAcquisitions     = self.acquisitionParams.numberAcquisitions
         self.samplesPerAcquisition = self.acquisitionParams.samplesPerAcquisition
@@ -284,28 +280,28 @@ class ATS9870():
         self.configureBoard()
         retVal = _acquire(self.addr)
         if retVal < 0:
-            self.raiseError('ERROR %s: acquire failed'%self.name)
+            raise AlazarError('ERROR %s: acquire failed'%self.name)
 
     def data_available(self):
         status = _wait_for_acquisition(self.addr, self.ch1Buffer_p, self.ch2Buffer_p)
         if status < 0:
-            self.raiseError('ERROR %s: data_available failed' % self.name)
+            raise AlazarError('ERROR %s: data_available failed' % self.name)
         return status
 
     def stop(self):
         retVal = _stop(self.addr)
         if retVal < 0:
-            self.raiseError('ERROR %s: stop failed' % self.name)
+            raise AlazarError('ERROR %s: stop failed' % self.name)
 
     def disconnect(self):
         retVal = _disconnect(self.addr)
         if retVal < 0:
-            self.raiseError('ERROR %s: disconnect failed'%self.name)
+            raise AlazarError('ERROR %s: disconnect failed'%self.name)
 
     def trigger(self):
         retVal = _force_trigger(self.addr)
         if retVal < 0:
-            self.raiseError('ERROR %s: trigger failed' % self.name)
+            raise AlazarError('ERROR %s: trigger failed' % self.name)
 
     def generateTestPattern(self):
 
