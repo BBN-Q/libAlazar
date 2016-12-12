@@ -300,7 +300,8 @@ int32_t AlazarATS9870::rx(void) {
       if (threadStop) {
         return 0;
       }
-      retCode = AlazarWaitAsyncBufferComplete(boardHandle, buff.get()->data(),
+      retCode = AlazarWaitAsyncBufferComplete(boardHandle,
+                                              buff.get()->data(),
                                               1000); // 1 sec timeout
       if (retCode == ApiWaitTimeout) {
         continue;
@@ -313,9 +314,50 @@ int32_t AlazarATS9870::rx(void) {
       }
     }
 
-    while (!dataQ.push(buff)) {
-      if (threadStop) {
-        return 0;
+    // if we have a socket, process the data and send it when we have a full
+    // buffer
+    if (socket != -1) {
+      int32_t full = processBuffer(
+                       buff,
+                       ch1WorkBuff->data(),
+                       ch2WorkBuff->data()
+                     );
+      if (full) {
+        ssize_t status;
+        size_t buf_size = ch1WorkBuff->size() * sizeof(float);
+        size_t msg_size = 2*buf_size;
+        status = write(socket, &msg_size, sizeof(size_t));
+        if (status != sizeof(size_t)) {
+          FILE_LOG(logERROR) << "Error writing msg_size to socket";
+          return -1;
+        }
+        status = write(socket, ch1WorkBuff->data(), buf_size);
+        if (status != buf_size) {
+          FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
+                             << "Tried to write " << buf_size << " bytes,"
+                             << "Actually wrote " << status << " bytes.";
+          return -1;
+        }
+        status = write(socket, ch2WorkBuff->data(), buf_size);
+        if (status != buf_size) {
+          FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
+                             << "Tried to write " << buf_size << " bytes,"
+                             << "Actually wrote " << status << " bytes.";
+          return -1;
+        }
+      }
+      // repost the buffer
+      if (postBuffer(buff) < 0) {
+        FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex
+                           << (uint64_t)(buff.get());
+        return -1;
+      }
+    } else {
+      // if no socket is available, push it onto dataQ
+      while (!dataQ.push(buff)) {
+        if (threadStop) {
+            return 0;
+        }
       }
     }
 
@@ -508,8 +550,17 @@ int32_t AlazarATS9870::getBufferSize(void) {
   return (0);
 }
 
+int32_t AlazarATS9870::processBuffer(
+    std::shared_ptr<std::vector<uint8_t>> buffPtr, float *ch1, float *ch2) {
+  if (partialBuffer) {
+    return processPartialBuffer(buffPtr, ch1, ch2);
+  } else {
+    return processBuffer(buffPtr, ch1, ch2);
+  }
+}
+
 int32_t
-AlazarATS9870::processBuffer(std::shared_ptr<std::vector<uint8_t>> buffPtr,
+AlazarATS9870::processCompleteBuffer(std::shared_ptr<std::vector<uint8_t>> buffPtr,
                              float *ch1, float *ch2) {
 
   // accumulate the average in the application buffer which needs to

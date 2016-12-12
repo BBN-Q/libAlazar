@@ -43,6 +43,9 @@ public:
 
   std::atomic<int32_t> bufferCounter;
 
+  // socket for sending data back to a listening client
+  int32_t socket = -1;
+
   static std::map<RETURN_CODE, std::string> errorMap;
 
   // this working buffer is used for the partial buffer logic when a round
@@ -80,8 +83,10 @@ public:
                          const ConfigData_t &config,
                          AcquisitionParams_t &acqParams);
 
-  int32_t processBuffer(std::shared_ptr<std::vector<uint8_t>> buff, float *ch1,
-                        float *ch2);
+  int32_t processBuffer(std::shared_ptr<std::vector<uint8_t>> buff,
+                        float *ch1, float *ch2);
+  int32_t processCompleteBuffer(std::shared_ptr<std::vector<uint8_t>> buff,
+                                float *ch1, float *ch2);
   int32_t processPartialBuffer(std::shared_ptr<std::vector<uint8_t>> buff,
                                float *ch1, float *ch2);
   int32_t force_trigger( void );
