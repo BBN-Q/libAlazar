@@ -71,6 +71,10 @@ _force_trigger = lib.force_trigger
 _force_trigger.argtypes = [c_uint32]
 _force_trigger.restype = c_int32
 
+_bind_socket = lib.bind_socket
+_bind_socket.argtypes = [c_uint32, c_int32]
+_bind_socket.restype = c_int32
+
 class AlazarError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -302,6 +306,11 @@ class ATS9870():
         retVal = _force_trigger(self.addr)
         if retVal < 0:
             raise AlazarError('ERROR %s: trigger failed' % self.name)
+
+    def bind_socket(self, socket):
+        retVal = _bind_socket(self.addr, socket.fileno())
+        if retVal < 0:
+            self.raiseError('ERROR %s: bind_socket failed' % self.name)
 
     def generateTestPattern(self):
 
