@@ -310,7 +310,7 @@ class ATS9870():
     def bind_socket(self, socket, channel):
         retVal = _bind_socket(self.addr, socket.fileno(), channel)
         if retVal < 0:
-            self.raiseError('ERROR %s: bind_socket failed' % self.name)
+            raise AlazarError('ERROR %s: bind_socket failed' % self.name)
 
     def generateTestPattern(self):
 
