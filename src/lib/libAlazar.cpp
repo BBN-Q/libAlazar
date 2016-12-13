@@ -561,7 +561,7 @@ int32_t AlazarATS9870::processBuffer(
   if (partialBuffer) {
     return processPartialBuffer(buffPtr, ch1, ch2);
   } else {
-    return processBuffer(buffPtr, ch1, ch2);
+    return processCompleteBuffer(buffPtr, ch1, ch2);
   }
 }
 
