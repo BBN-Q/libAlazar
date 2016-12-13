@@ -329,7 +329,8 @@ int32_t AlazarATS9870::rx(void) {
         if (sockets[0] != -1) {
           status = write(sockets[0], &msg_size, sizeof(size_t));
           if (status != sizeof(size_t)) {
-            FILE_LOG(logERROR) << "Error writing msg_size to socket";
+            FILE_LOG(logERROR) << "Error writing msg_size to socket,"
+                               << " received status " << status;
             return -1;
           }
           status = write(sockets[0], ch1WorkBuff->data(), buf_size);
@@ -343,7 +344,8 @@ int32_t AlazarATS9870::rx(void) {
         if (sockets[1] != -1) {
           status = write(sockets[1], &msg_size, sizeof(size_t));
           if (status != sizeof(size_t)) {
-            FILE_LOG(logERROR) << "Error writing msg_size to socket";
+            FILE_LOG(logERROR) << "Error writing msg_size to socket,"
+                               << " received status " << status;
             return -1;
           }
           status = write(sockets[1], ch2WorkBuff->data(), buf_size);
