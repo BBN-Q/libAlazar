@@ -459,7 +459,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
 
   // need to fit at least one record in a buffer
   if (recordLength * numChannels > MAX_BUFFER_SIZE) {
-    FILE_LOG(logERROR) << "SINGLE RECORD TO LARGE FOR THE BUFFER";
+    FILE_LOG(logERROR) << "SINGLE RECORD TOO LARGE FOR THE BUFFER";
     return (-1);
   }
 
@@ -479,7 +479,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
        rr != rrFactors.end(); ++rr) {
     uint64_t bufferSizeTest =
         recordLength * nbrSegments * nbrWaveforms * *rr * numChannels;
-    if (bufferSizeTest <= MAX_BUFFER_SIZE) {
+    if (bufferSizeTest <= PREF_BUFFER_SIZE) {
       roundRobinsPerBuffer = *rr;
       FILE_LOG(logINFO) << "roundRobinsPerBuffer: " << roundRobinsPerBuffer;
       break;
@@ -525,7 +525,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
   for (std::list<uint32_t>::iterator rec = recFactors.begin();
        rec != recFactors.end(); ++rec) {
     uint32_t bufferSizeTest = recordLength * *rec * numChannels;
-    if (bufferSizeTest <= bufferSize) {
+    if (bufferSizeTest <= PREF_BUFFER_SIZE) {
       recordsPerBuffer = *rec;
       FILE_LOG(logINFO) << "recordsPerBuffer: " << recordsPerBuffer;
       break;

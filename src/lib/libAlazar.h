@@ -19,7 +19,8 @@
 
 #define MAX_NUM_BUFFERS 32
 #define MIN_NUM_BUFFERS 2
-#define MAX_BUFFER_SIZE 256000000// 256M
+#define MAX_BUFFER_SIZE 256000000 // 256M
+#define PREF_BUFFER_SIZE 4000000 // 4M (suggestion from Alazar manual for DMA transfers)
 
 class AlazarATS9870 {
 
