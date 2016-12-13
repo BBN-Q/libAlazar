@@ -11,6 +11,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <cstring>
+#include <cmath>
 
 #include "libAlazar.h"
 #include "libAlazarAPI.h"
@@ -82,7 +83,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   channelOffset = config.verticalOffset;
   counts2Volts = 2 * channelScale / 256.0;
 
-  uint32_t rangeIDKey = static_cast<uint32_t>(config.verticalScale * 1000);
+  uint32_t rangeIDKey = static_cast<uint32_t>(std::lround(config.verticalScale * 1000));
   if (rangeIdMap.find(rangeIDKey) == rangeIdMap.end()) {
     FILE_LOG(logERROR) << "Invalid Channel Scale: " << rangeIDKey;
     return (-1);
@@ -111,15 +112,15 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     return -1;
   }
 
-  const char *bamdwithKey = config.bandwidth;
-  if (bamdwithMap.find(bamdwithKey) == bamdwithMap.end()) {
-    FILE_LOG(logERROR) << "Invalid Mode: " << bamdwithKey;
+  const char *bandwidthKey = config.bandwidth;
+  if (bandwidthMap.find(bandwidthKey) == bandwidthMap.end()) {
+    FILE_LOG(logERROR) << "Invalid Mode: " << bandwidthKey;
     return (-1);
   }
   retCode = AlazarSetBWLimit(
       boardHandle,                  // HANDLE -- board handle
       CHANNEL_A,                    // U8 -- channel identifier
-      bamdwithMap[config.bandwidth] // U32 -- 0 = disable, 1 = enable
+      bandwidthMap[config.bandwidth] // U32 -- 0 = disable, 1 = enable
       );
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
@@ -131,9 +132,8 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
       boardHandle,                          // HANDLE -- board handle
       CHANNEL_B,                            // U8 -- input channel
       couplingMap[config.verticalCoupling], // U32 -- input coupling id
-      rangeIdMap[static_cast<uint32_t>(config.verticalScale *
-                                       1000)], // U32 -- input range id
-      IMPEDANCE_50_OHM                         // U32 -- input impedance id
+      rangeIdMap[rangeIDKey],               // U32 -- input range id
+      IMPEDANCE_50_OHM                      // U32 -- input impedance id
       );
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
@@ -143,7 +143,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   retCode = AlazarSetBWLimit(
       boardHandle,                  // HANDLE -- board handle
       CHANNEL_B,                    // U8 -- channel identifier
-      bamdwithMap[config.bandwidth] // U32 -- 0 = disable, 1 = enable
+      bandwidthMap[config.bandwidth] // U32 -- 0 = disable, 1 = enable
       );
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);

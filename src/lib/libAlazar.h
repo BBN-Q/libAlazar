@@ -115,7 +115,7 @@ protected:
   };
 
   // map bandwidth string to control value
-  std::map<std::string, uint32_t> bamdwithMap = {
+  std::map<std::string, uint32_t> bandwidthMap = {
       {"Full", 0}, {"20MHz", 1},
   };
 
