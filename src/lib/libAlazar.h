@@ -24,6 +24,8 @@
 class AlazarATS9870 {
 
 public:
+  const uint32_t numChannels = 2;
+
   std::atomic<bool> threadStop;
   std::atomic<bool> threadRunning;
 
@@ -44,7 +46,7 @@ public:
   std::atomic<int32_t> bufferCounter;
 
   // socket for sending data back to a listening client
-  int32_t socket = -1;
+  int32_t sockets[2] = {-1, -1};
 
   static std::map<RETURN_CODE, std::string> errorMap;
 
@@ -134,7 +136,6 @@ protected:
 
   uint32_t bufferSize;
   const uint32_t maxOnboardMemory = 0x10000000; // 256MB
-  const uint32_t numChannels = 2;
 
   uint32_t recordsPerBuffer;
   uint32_t recordsPerAcquisition;

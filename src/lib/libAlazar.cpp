@@ -316,7 +316,7 @@ int32_t AlazarATS9870::rx(void) {
 
     // if we have a socket, process the data and send it when we have a full
     // buffer
-    if (socket != -1) {
+    if (sockets[0] != -1 || sockets[1] != -1) {
       int32_t full = processBuffer(
                        buff,
                        ch1WorkBuff->data(),
@@ -325,25 +325,34 @@ int32_t AlazarATS9870::rx(void) {
       if (full) {
         ssize_t status;
         size_t buf_size = ch1WorkBuff->size() * sizeof(float);
-        size_t msg_size = 2*buf_size;
-        status = write(socket, &msg_size, sizeof(size_t));
-        if (status != sizeof(size_t)) {
-          FILE_LOG(logERROR) << "Error writing msg_size to socket";
-          return -1;
+        size_t msg_size = buf_size;
+        if (sockets[0] != -1) {
+          status = write(sockets[0], &msg_size, sizeof(size_t));
+          if (status != sizeof(size_t)) {
+            FILE_LOG(logERROR) << "Error writing msg_size to socket";
+            return -1;
+          }
+          status = write(sockets[0], ch1WorkBuff->data(), buf_size);
+          if (status != buf_size) {
+            FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
+                               << "Tried to write " << buf_size << " bytes,"
+                               << "Actually wrote " << status << " bytes.";
+            return -1;
+          }
         }
-        status = write(socket, ch1WorkBuff->data(), buf_size);
-        if (status != buf_size) {
-          FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
-                             << "Tried to write " << buf_size << " bytes,"
-                             << "Actually wrote " << status << " bytes.";
-          return -1;
-        }
-        status = write(socket, ch2WorkBuff->data(), buf_size);
-        if (status != buf_size) {
-          FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
-                             << "Tried to write " << buf_size << " bytes,"
-                             << "Actually wrote " << status << " bytes.";
-          return -1;
+        if (sockets[1] != -1) {
+          status = write(sockets[1], &msg_size, sizeof(size_t));
+          if (status != sizeof(size_t)) {
+            FILE_LOG(logERROR) << "Error writing msg_size to socket";
+            return -1;
+          }
+          status = write(sockets[1], ch2WorkBuff->data(), buf_size);
+          if (status != buf_size) {
+            FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
+                               << "Tried to write " << buf_size << " bytes,"
+                               << "Actually wrote " << status << " bytes.";
+            return -1;
+          }
         }
       }
       // repost the buffer
@@ -354,11 +363,7 @@ int32_t AlazarATS9870::rx(void) {
       }
     } else {
       // if no socket is available, push it onto dataQ
-      while (!dataQ.push(buff)) {
-        if (threadStop) {
-            return 0;
-        }
-      }
+      dataQ.push(buff);
     }
 
     if (threadStop) {
@@ -387,6 +392,7 @@ int32_t AlazarATS9870::rxThreadRun(void) {
       std::min(nbrBuffers, static_cast<uint32_t>(MAX_NUM_BUFFERS));
   nbrBuffersMaxMin =
       std::max(nbrBuffersMaxMin, static_cast<uint32_t>(MIN_NUM_BUFFERS));
+
   for (uint32_t i = 0; i < nbrBuffersMaxMin; ++i) {
     auto buff = std::make_shared<std::vector<uint8_t>>(bufferLen);
     postBuffer(buff);

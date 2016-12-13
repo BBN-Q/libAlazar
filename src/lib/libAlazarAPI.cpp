@@ -76,7 +76,7 @@ int32_t acquire(uint32_t boardId) {
 int32_t wait_for_acquisition(uint32_t boardId, float *ch1, float *ch2) {
   AlazarATS9870 &board = boards[boardId - 1];
 
-  if (board.socket != -1) {
+  if (board.sockets[0] != -1 || board.sockets[1] != -1) {
       FILE_LOG(logERROR) << "wait_for_acquisition should not be used with the socket API.";
       return -1;
   }
@@ -148,9 +148,13 @@ int32_t flashLED(uint32_t boardId)
   return 0;
 }
 
-int32_t bind_socket(uint32_t boardId, int32_t socket) {
+int32_t bind_socket(uint32_t boardId, int32_t socket, uint32_t channel) {
     AlazarATS9870 &board = boards[boardId - 1];
-    board.socket = socket;
+    if (channel < 0 || channel >= board.numChannels) {
+        FILE_LOG(logERROR) << "Invalid channel";
+        return -1;
+    }
+    board.sockets[channel] = socket;
     return 0;
 }
 
