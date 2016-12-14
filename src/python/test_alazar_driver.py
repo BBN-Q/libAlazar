@@ -30,8 +30,8 @@ class TestAPI(AlazarDriverTest):
 
     def test_local_config(self):
         #run a local digitizer
-        dlocal=ATS9870('foo/1')
-        dlocal.connectBoard()
+        dlocal = ATS9870()
+        dlocal.connect('foo/1')
 
         #test using values that are different than the defaults
         self.verify_local_attribute(dlocal,'acquireMode','digitizer')
@@ -57,8 +57,8 @@ class TestAPI(AlazarDriverTest):
 
     def test_local_api(self):
 
-        dlocal=ATS9870('foo/1')
-        dlocal.connectBoard()
+        dlocal=ATS9870()
+        dlocal.connect('foo/1')
         dlocal.setAll(dlocal.config)
         dlocal.acquire()
         dlocal.wait_for_acquisition()
@@ -88,11 +88,11 @@ class TestLib(unittest.TestCase):
             'verticalOffset':0.0,
             'verticalScale':1.0,
         }
-        self.ats9870=ATS9870('foo/1')
+        self.ats9870=ATS9870()
 
 
     def connect(self,logFile):
-        ret =self.ats9870.connectBoard()
+        ret = self.ats9870.connect('foo/1')
 
 
     @classmethod
