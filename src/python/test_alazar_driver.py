@@ -61,7 +61,7 @@ class TestAPI(AlazarDriverTest):
         dlocal.connect('foo/1')
         dlocal.setAll(dlocal.config)
         dlocal.acquire()
-        dlocal.wait_for_acquisition()
+        dlocal.data_available()
         dlocal.disconnect()
 
 
@@ -92,6 +92,7 @@ class TestLib(unittest.TestCase):
 
 
     def connect(self,logFile):
+        self.ats9870.logFile = logFile
         ret = self.ats9870.connect('foo/1')
 
 
@@ -166,7 +167,6 @@ class TestLib(unittest.TestCase):
             'verticalOffset':0.0,
             'verticalScale':1.0,
         }
-        self.ats9870.setAll(self.config)
 
     def setUp(self):
         self.initConfig()
