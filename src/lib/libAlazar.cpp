@@ -293,7 +293,7 @@ int32_t AlazarATS9870::rx(void) {
   uint32_t count = 0;
   FILE_LOG(logDEBUG4) << "STARTING RX THREAD";
 
-  while (1) {
+  while (bufferCounter < static_cast<int32_t>(nbrBuffers)) {
     std::shared_ptr<std::vector<uint8_t>> buff;
     while (!bufferQ.pop(buff)) {
       if (threadStop) {
@@ -363,11 +363,13 @@ int32_t AlazarATS9870::rx(void) {
           }
         }
       }
-      // repost the buffer
-      if (postBuffer(buff) < 0) {
-        FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex
-                           << (uint64_t)(buff.get());
-        return -1;
+      // repost the buffer if we are not done
+      if (bufferCounter < static_cast<int32_t>(nbrBuffers)) {
+        if (postBuffer(buff) < 0) {
+          FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex
+          << (uint64_t)(buff.get());
+          return -1;
+        }
       }
     } else {
       // if no socket is available, push it onto dataQ
@@ -377,6 +379,12 @@ int32_t AlazarATS9870::rx(void) {
     if (threadStop) {
       return 0;
     }
+    bufferCounter++;
+  }
+  // stop the card
+  retCode = AlazarAbortAsyncRead(boardHandle);
+  if (retCode != ApiSuccess) {
+    printError(retCode, __FILE__, __LINE__);
   }
   return 0;
 }
@@ -417,9 +425,14 @@ int32_t AlazarATS9870::rxThreadRun(void) {
 }
 
 void AlazarATS9870::rxThreadStop(void) {
+  FILE_LOG(logDEBUG4) << "STOPPING RX THREAD " << rxThread.get_id();
   if (threadRunning) {
     threadStop = true;
-    rxThread.join();
+    try {
+      rxThread.join();
+    } catch (std::exception &e) {
+      FILE_LOG(logERROR) << "Error occured: " << e.what();
+    }
     threadRunning = false;
 
     RETURN_CODE retCode = AlazarAbortAsyncRead(boardHandle);
@@ -438,7 +451,6 @@ void AlazarATS9870::rxThreadStop(void) {
     ownerQ.clear(buff);
   }
 
-  FILE_LOG(logDEBUG4) << "STOPPING RX THREAD";
   threadStop = false;
 }
 
@@ -629,7 +641,6 @@ int32_t AlazarATS9870::processPartialBuffer(
     std::shared_ptr<std::vector<uint8_t>> buffPtr, float *ch1, float *ch2) {
   uint32_t partialIndex = bufferCounter % buffersPerRoundRobin;
   FILE_LOG(logDEBUG4) << "PARTIAL INDEX " << partialIndex;
-  bufferCounter++;
 
   // the raw pointer makes the code more readable
   uint8_t *buff = static_cast<uint8_t *>(buffPtr.get()->data());
