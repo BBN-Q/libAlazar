@@ -12,7 +12,7 @@
 #include "libAlazar.h"
 
 using namespace moodycamel;
-static ReaderWriterQueue<int8_t *, MAX_NUM_BUFFERS> bufferQ;
+static ReaderWriterQueue<void *> bufferQ(MAX_NUM_BUFFERS);
 
 uint32_t dummyBoard;
 uint32_t recordSize;
@@ -23,8 +23,7 @@ uint32_t recordCounter = 0;
 
 RETURN_CODE AlazarPostAsyncBuffer(HANDLE hDevice, void *pBuffer,
                                   U32 uBufferLength_bytes) {
-  while (!bufferQ.try_enqueue(static_cast<int8_t *>(pBuffer)))
-    ;
+  bufferQ.enqueue(pBuffer);
 
   bufferLenBytes = uBufferLength_bytes;
   return ApiSuccess;
@@ -32,10 +31,11 @@ RETURN_CODE AlazarPostAsyncBuffer(HANDLE hDevice, void *pBuffer,
 
 RETURN_CODE AlazarWaitAsyncBufferComplete(HANDLE hDevice, void *pBuffer,
                                           U32 uTimeout_ms) {
-  int8_t *temp;
-  while (!bufferQ.try_dequeue(temp))
+  void *bufp;
+  while (!bufferQ.try_dequeue(bufp))
     ;
-  if (temp == pBuffer) {
+  if (bufp == pBuffer) {
+    int8_t *temp = static_cast<int8_t *>(bufp);
     // fill in with some dummy data
     for (uint32_t i = 0; i < (bufferLenBytes / 2) / samplesPerRecord; i++) {
       int8_t value = static_cast<int8_t>(recordCounter % 256);
@@ -269,7 +269,12 @@ RETURN_CODE AlazarStartCapture(HANDLE h) { return ApiSuccess; }
 
 RETURN_CODE AlazarCloseAUTODma(HANDLE h) { return ApiSuccess; }
 
-RETURN_CODE AlazarAbortAsyncRead(HANDLE hBoard) { return ApiSuccess; }
+RETURN_CODE AlazarAbortAsyncRead(HANDLE hBoard) {
+  // pop until false to clear the queue
+  while (bufferQ.pop())
+    ;
+  return ApiSuccess;
+}
 
 RETURN_CODE AlazarForceTrigger(HANDLE hBoard) { return ApiSuccess; }
 
