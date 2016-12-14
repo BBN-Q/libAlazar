@@ -128,8 +128,12 @@ class TestLib(unittest.TestCase):
         ch2 = np.array([],dtype=np.float32)
 
         #wait for the acquisition to be complete
-        for count in range(self.ats9870.numberAcquistions):
-            while not self.ats9870.wait_for_acquisition():
+        timeout = 1
+        t = time.time()
+        for count in range(self.ats9870.numberAcquisitions):
+            while not self.ats9870.data_available():
+                if time.time() - t > timeout:
+                    break
                 time.sleep(.0001)
             ch1=np.append(ch1,self.ats9870.ch1Buffer)
             ch2=np.append(ch2,self.ats9870.ch2Buffer)
