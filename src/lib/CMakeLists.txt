@@ -39,18 +39,22 @@ else()
 endif()
 
 if(SIM)
-	#an alazar simulator is used for testing purposes
-	ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
-	set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-	TARGET_LINK_LIBRARIES(Alazar
-		AlazarSim
-    Threads::Threads
+    #an alazar simulator is used for testing purposes
+    ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
+    set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+    TARGET_LINK_LIBRARIES(Alazar
+        AlazarSim
+        Threads::Threads
     )
 else()
-	TARGET_LINK_LIBRARIES(Alazar
-		/c/windows/system32/ATSApi.dll
-        ws2_32
+    TARGET_LINK_LIBRARIES(Alazar
+        /c/windows/system32/ATSApi.dll
+        Threads::Threads
     )
+endif()
+
+if(WIN32)
+    TARGET_LINK_LIBRARIES(Alazar ws2_32)
 endif()
 
 ADD_EXECUTABLE(apiExample
