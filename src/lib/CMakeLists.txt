@@ -49,6 +49,7 @@ if(SIM)
 else()
 	TARGET_LINK_LIBRARIES(Alazar
 		/c/windows/system32/ATSApi.dll
+        ws2_32
     )
 endif()
 

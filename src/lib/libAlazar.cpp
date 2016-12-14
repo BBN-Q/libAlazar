@@ -13,6 +13,12 @@
 #include <cstring>
 #include <cmath>
 
+#ifndef WIN32
+#include <sys/socket.h>
+#else
+#include <winsock2.h>
+#endif
+
 #include "libAlazar.h"
 #include "libAlazarAPI.h"
 #include "logger.h"
@@ -325,15 +331,15 @@ int32_t AlazarATS9870::rx(void) {
       if (full) {
         ssize_t status;
         size_t buf_size = ch1WorkBuff->size() * sizeof(float);
-        size_t msg_size = buf_size;
+        char* msg_size = reinterpret_cast<char *>(&buf_size);
         if (sockets[0] != -1) {
-          status = write(sockets[0], &msg_size, sizeof(size_t));
+          status = send(sockets[0], msg_size, sizeof(size_t), 0);
           if (status != sizeof(size_t)) {
             FILE_LOG(logERROR) << "Error writing msg_size to socket,"
-                               << " received status " << status;
+                               << " received status " << std::strerror(errno);
             return -1;
           }
-          status = write(sockets[0], ch1WorkBuff->data(), buf_size);
+          status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff->data()), buf_size, 0);
           if (status != buf_size) {
             FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
                                << "Tried to write " << buf_size << " bytes,"
@@ -342,13 +348,13 @@ int32_t AlazarATS9870::rx(void) {
           }
         }
         if (sockets[1] != -1) {
-          status = write(sockets[1], &msg_size, sizeof(size_t));
+          status = send(sockets[1], msg_size, sizeof(size_t), 0);
           if (status != sizeof(size_t)) {
             FILE_LOG(logERROR) << "Error writing msg_size to socket,"
-                               << " received status " << status;
+                               << " received status " << std::strerror(errno);
             return -1;
           }
-          status = write(sockets[1], ch2WorkBuff->data(), buf_size);
+          status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff->data()), buf_size, 0);
           if (status != buf_size) {
             FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
                                << "Tried to write " << buf_size << " bytes,"
