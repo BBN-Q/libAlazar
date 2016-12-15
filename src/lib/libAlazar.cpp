@@ -13,6 +13,12 @@
 #include <cstring>
 #include <cmath>
 
+#ifndef WIN32
+#include <sys/socket.h>
+#else
+#include <winsock2.h>
+#endif
+
 #include "libAlazar.h"
 #include "libAlazarAPI.h"
 #include "logger.h"
@@ -287,7 +293,7 @@ int32_t AlazarATS9870::rx(void) {
   uint32_t count = 0;
   FILE_LOG(logDEBUG4) << "STARTING RX THREAD";
 
-  while (1) {
+  while (bufferCounter < static_cast<int32_t>(nbrBuffers)) {
     std::shared_ptr<std::vector<uint8_t>> buff;
     while (!bufferQ.pop(buff)) {
       if (threadStop) {
@@ -300,7 +306,8 @@ int32_t AlazarATS9870::rx(void) {
       if (threadStop) {
         return 0;
       }
-      retCode = AlazarWaitAsyncBufferComplete(boardHandle, buff.get()->data(),
+      retCode = AlazarWaitAsyncBufferComplete(boardHandle,
+                                              buff.get()->data(),
                                               1000); // 1 sec timeout
       if (retCode == ApiWaitTimeout) {
         continue;
@@ -313,15 +320,71 @@ int32_t AlazarATS9870::rx(void) {
       }
     }
 
-    while (!dataQ.push(buff)) {
-      if (threadStop) {
-        return 0;
+    // if we have a socket, process the data and send it when we have a full
+    // buffer
+    if (sockets[0] != -1 || sockets[1] != -1) {
+      int32_t full = processBuffer(
+                       buff,
+                       ch1WorkBuff->data(),
+                       ch2WorkBuff->data()
+                     );
+      if (full) {
+        ssize_t status;
+        size_t buf_size = ch1WorkBuff->size() * sizeof(float);
+        char* msg_size = reinterpret_cast<char *>(&buf_size);
+        if (sockets[0] != -1) {
+          status = send(sockets[0], msg_size, sizeof(size_t), 0);
+          if (status != sizeof(size_t)) {
+            FILE_LOG(logERROR) << "Error writing msg_size to socket,"
+                               << " received status " << std::strerror(errno);
+            return -1;
+          }
+          status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff->data()), buf_size, 0);
+          if (status != buf_size) {
+            FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
+                               << "Tried to write " << buf_size << " bytes,"
+                               << "Actually wrote " << status << " bytes.";
+            return -1;
+          }
+        }
+        if (sockets[1] != -1) {
+          status = send(sockets[1], msg_size, sizeof(size_t), 0);
+          if (status != sizeof(size_t)) {
+            FILE_LOG(logERROR) << "Error writing msg_size to socket,"
+                               << " received status " << std::strerror(errno);
+            return -1;
+          }
+          status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff->data()), buf_size, 0);
+          if (status != buf_size) {
+            FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
+                               << "Tried to write " << buf_size << " bytes,"
+                               << "Actually wrote " << status << " bytes.";
+            return -1;
+          }
+        }
       }
+      // repost the buffer if we are not done
+      if (bufferCounter < static_cast<int32_t>(nbrBuffers)) {
+        if (postBuffer(buff) < 0) {
+          FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex
+          << (uint64_t)(buff.get());
+          return -1;
+        }
+      }
+    } else {
+      // if no socket is available, push it onto dataQ
+      dataQ.push(buff);
     }
 
     if (threadStop) {
       return 0;
     }
+    bufferCounter++;
+  }
+  // stop the card
+  retCode = AlazarAbortAsyncRead(boardHandle);
+  if (retCode != ApiSuccess) {
+    printError(retCode, __FILE__, __LINE__);
   }
   return 0;
 }
@@ -345,10 +408,13 @@ int32_t AlazarATS9870::rxThreadRun(void) {
       std::min(nbrBuffers, static_cast<uint32_t>(MAX_NUM_BUFFERS));
   nbrBuffersMaxMin =
       std::max(nbrBuffersMaxMin, static_cast<uint32_t>(MIN_NUM_BUFFERS));
+
   for (uint32_t i = 0; i < nbrBuffersMaxMin; ++i) {
     auto buff = std::make_shared<std::vector<uint8_t>>(bufferLen);
     postBuffer(buff);
   }
+  // reset buffer counter
+  bufferCounter = 0;
 
   retCode = AlazarStartCapture(boardHandle);
   if (retCode != ApiSuccess) {
@@ -361,9 +427,14 @@ int32_t AlazarATS9870::rxThreadRun(void) {
 }
 
 void AlazarATS9870::rxThreadStop(void) {
+  FILE_LOG(logDEBUG4) << "STOPPING RX THREAD " << rxThread.get_id();
   if (threadRunning) {
     threadStop = true;
-    rxThread.join();
+    try {
+      rxThread.join();
+    } catch (std::exception &e) {
+      FILE_LOG(logERROR) << "Error occured: " << e.what();
+    }
     threadRunning = false;
 
     RETURN_CODE retCode = AlazarAbortAsyncRead(boardHandle);
@@ -382,7 +453,6 @@ void AlazarATS9870::rxThreadStop(void) {
     ownerQ.clear(buff);
   }
 
-  FILE_LOG(logDEBUG4) << "STOPPING RX THREAD";
   threadStop = false;
 }
 
@@ -411,7 +481,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
 
   // need to fit at least one record in a buffer
   if (recordLength * numChannels > MAX_BUFFER_SIZE) {
-    FILE_LOG(logERROR) << "SINGLE RECORD TO LARGE FOR THE BUFFER";
+    FILE_LOG(logERROR) << "SINGLE RECORD TOO LARGE FOR THE BUFFER";
     return (-1);
   }
 
@@ -431,7 +501,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
        rr != rrFactors.end(); ++rr) {
     uint64_t bufferSizeTest =
         recordLength * nbrSegments * nbrWaveforms * *rr * numChannels;
-    if (bufferSizeTest <= MAX_BUFFER_SIZE) {
+    if (bufferSizeTest <= PREF_BUFFER_SIZE) {
       roundRobinsPerBuffer = *rr;
       FILE_LOG(logINFO) << "roundRobinsPerBuffer: " << roundRobinsPerBuffer;
       break;
@@ -477,7 +547,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
   for (std::list<uint32_t>::iterator rec = recFactors.begin();
        rec != recFactors.end(); ++rec) {
     uint32_t bufferSizeTest = recordLength * *rec * numChannels;
-    if (bufferSizeTest <= bufferSize) {
+    if (bufferSizeTest <= PREF_BUFFER_SIZE) {
       recordsPerBuffer = *rec;
       FILE_LOG(logINFO) << "recordsPerBuffer: " << recordsPerBuffer;
       break;
@@ -508,8 +578,17 @@ int32_t AlazarATS9870::getBufferSize(void) {
   return (0);
 }
 
+int32_t AlazarATS9870::processBuffer(
+    std::shared_ptr<std::vector<uint8_t>> buffPtr, float *ch1, float *ch2) {
+  if (partialBuffer) {
+    return processPartialBuffer(buffPtr, ch1, ch2);
+  } else {
+    return processCompleteBuffer(buffPtr, ch1, ch2);
+  }
+}
+
 int32_t
-AlazarATS9870::processBuffer(std::shared_ptr<std::vector<uint8_t>> buffPtr,
+AlazarATS9870::processCompleteBuffer(std::shared_ptr<std::vector<uint8_t>> buffPtr,
                              float *ch1, float *ch2) {
 
   // accumulate the average in the application buffer which needs to
@@ -564,7 +643,6 @@ int32_t AlazarATS9870::processPartialBuffer(
     std::shared_ptr<std::vector<uint8_t>> buffPtr, float *ch1, float *ch2) {
   uint32_t partialIndex = bufferCounter % buffersPerRoundRobin;
   FILE_LOG(logDEBUG4) << "PARTIAL INDEX " << partialIndex;
-  bufferCounter++;
 
   // the raw pointer makes the code more readable
   uint8_t *buff = static_cast<uint8_t *>(buffPtr.get()->data());

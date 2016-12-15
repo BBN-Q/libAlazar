@@ -76,6 +76,11 @@ int32_t acquire(uint32_t boardId) {
 int32_t wait_for_acquisition(uint32_t boardId, float *ch1, float *ch2) {
   AlazarATS9870 &board = boards[boardId - 1];
 
+  if (board.sockets[0] != -1 || board.sockets[1] != -1) {
+      FILE_LOG(logERROR) << "wait_for_acquisition should not be used with the socket API.";
+      return -1;
+  }
+
   if (ch1 == NULL) {
     FILE_LOG(logERROR) << "NULL Pointer to Ch1";
     return (-1);
@@ -98,12 +103,7 @@ int32_t wait_for_acquisition(uint32_t boardId, float *ch1, float *ch2) {
   // if there are multiple buffers per roundrobin the partial index logic
   // is used to process the data from the individual buffers into one
   // application channel buffer
-  int32_t ret = 0;
-  if (board.partialBuffer) {
-    ret = board.processPartialBuffer(buff, ch1, ch2);
-  } else {
-    ret = board.processBuffer(buff, ch1, ch2);
-  }
+  int32_t ret = board.processBuffer(buff, ch1, ch2);
 
   if (board.postBuffer(buff) >= 0) {
     FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex
@@ -114,7 +114,7 @@ int32_t wait_for_acquisition(uint32_t boardId, float *ch1, float *ch2) {
     return (-1);
   }
 
-  return (ret);
+  return ret;
 }
 
 int32_t stop(uint32_t boardId) {
@@ -146,6 +146,16 @@ int32_t flashLED(uint32_t boardId)
 {
   FILE_LOG(logDEBUG4) << "Flashing LED ... ";
   return 0;
+}
+
+int32_t bind_socket(uint32_t boardId, int32_t socket, uint32_t channel) {
+    AlazarATS9870 &board = boards[boardId - 1];
+    if (channel >= board.numChannels) {
+        FILE_LOG(logERROR) << "Invalid channel";
+        return -1;
+    }
+    board.sockets[channel] = socket;
+    return 0;
 }
 
 #ifdef __cplusplus

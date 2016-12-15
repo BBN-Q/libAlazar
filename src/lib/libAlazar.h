@@ -19,11 +19,14 @@
 
 #define MAX_NUM_BUFFERS 32
 #define MIN_NUM_BUFFERS 2
-#define MAX_BUFFER_SIZE 256000000// 256M
+#define MAX_BUFFER_SIZE 256000000 // 256M
+#define PREF_BUFFER_SIZE 4000000 // 4M (suggestion from Alazar manual for DMA transfers)
 
 class AlazarATS9870 {
 
 public:
+  const uint32_t numChannels = 2;
+
   std::atomic<bool> threadStop;
   std::atomic<bool> threadRunning;
 
@@ -42,6 +45,9 @@ public:
   AlazarBufferQ<std::shared_ptr<std::vector<uint8_t>>> ownerQ;
 
   std::atomic<int32_t> bufferCounter;
+
+  // socket for sending data back to a listening client
+  int32_t sockets[2] = {-1, -1};
 
   static std::map<RETURN_CODE, std::string> errorMap;
 
@@ -80,8 +86,10 @@ public:
                          const ConfigData_t &config,
                          AcquisitionParams_t &acqParams);
 
-  int32_t processBuffer(std::shared_ptr<std::vector<uint8_t>> buff, float *ch1,
-                        float *ch2);
+  int32_t processBuffer(std::shared_ptr<std::vector<uint8_t>> buff,
+                        float *ch1, float *ch2);
+  int32_t processCompleteBuffer(std::shared_ptr<std::vector<uint8_t>> buff,
+                                float *ch1, float *ch2);
   int32_t processPartialBuffer(std::shared_ptr<std::vector<uint8_t>> buff,
                                float *ch1, float *ch2);
   int32_t force_trigger( void );
@@ -129,7 +137,6 @@ protected:
 
   uint32_t bufferSize;
   const uint32_t maxOnboardMemory = 0x10000000; // 256MB
-  const uint32_t numChannels = 2;
 
   uint32_t recordsPerBuffer;
   uint32_t recordsPerAcquisition;
