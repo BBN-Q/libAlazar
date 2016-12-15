@@ -413,6 +413,8 @@ int32_t AlazarATS9870::rxThreadRun(void) {
     auto buff = std::make_shared<std::vector<uint8_t>>(bufferLen);
     postBuffer(buff);
   }
+  // reset buffer counter
+  bufferCounter = 0;
 
   retCode = AlazarStartCapture(boardHandle);
   if (retCode != ApiSuccess) {
