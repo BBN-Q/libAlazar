@@ -148,7 +148,7 @@ int32_t flashLED(uint32_t boardId)
   return 0;
 }
 
-int32_t bind_socket(uint32_t boardId, int32_t socket, uint32_t channel) {
+int32_t register_socket(uint32_t boardId, uint32_t channel, int32_t socket) {
     AlazarATS9870 &board = boards[boardId - 1];
     if (channel >= board.numChannels) {
         FILE_LOG(logERROR) << "Invalid channel";
