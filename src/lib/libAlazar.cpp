@@ -13,7 +13,7 @@
 #include <cstring>
 #include <cmath>
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/socket.h>
 #else
 #include <winsock2.h>
@@ -336,7 +336,11 @@ int32_t AlazarATS9870::rx(void) {
           status = send(sockets[0], msg_size, sizeof(size_t), 0);
           if (status != sizeof(size_t)) {
             FILE_LOG(logERROR) << "Error writing msg_size to socket,"
-                               << " received status " << std::strerror(errno);
+            #ifdef _WIN32
+                               << " received error: " << WSAGetLastError();
+            #else
+                               << " received error: " << std::strerror(errno);
+            #endif
             return -1;
           }
           status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff->data()), buf_size, 0);
@@ -351,7 +355,11 @@ int32_t AlazarATS9870::rx(void) {
           status = send(sockets[1], msg_size, sizeof(size_t), 0);
           if (status != sizeof(size_t)) {
             FILE_LOG(logERROR) << "Error writing msg_size to socket,"
-                               << " received status " << std::strerror(errno);
+            #ifdef _WIN32
+                               << " received error: " << WSAGetLastError();
+            #else
+                               << " received error: " << std::strerror(errno);
+            #endif
             return -1;
           }
           status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff->data()), buf_size, 0);
