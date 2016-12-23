@@ -1,16 +1,15 @@
 before_script:
     - git submodule update --init
-    
+
 ubuntuBuild:
     image: eschiller/libalazar-builder:v2
-    script: 
+    script:
         - mkdir build
         - cd build
         - cmake -DSIM=true ../
-        - sh ../src/lib/version.sh > ../src/lib/version.h
         - make clean install
         - export LD_LIBRARY_PATH=./bin
-        - cd ../src/python 
+        - cd ../src/python
         - which python
         - python -m unittest
         - cd ../../build
@@ -19,29 +18,27 @@ ubuntuBuild:
 
     tags:
         - ubuntu
-        
-windowsAPITest:    
+
+windowsAPITest:
 
     script:
         - mkdir build
         - cd build
         - cmake -G "MSYS Makefiles" -DSIM=true ../
-        - sh ../src/lib/version.sh > ../src/lib/version.h
         - make clean install
-        - cd ../src/python 
+        - cd ../src/python
         - which python
         - python -m unittest
         - cd ../../build
     tags:
         - windows
-    
-windowsDLLBuild:    
+
+windowsDLLBuild:
 
     script:
         - mkdir build
         - cd build
         - cmake -G "MSYS Makefiles" -DLOG_LEVEL=2 ../
-        - sh ../src/lib/version.sh > ../src/lib/version.h
         - make clean install
     tags:
         - windows
@@ -49,4 +46,4 @@ windowsDLLBuild:
         paths:
             - build/dist
     only:
-        - tags    
+        - tags
