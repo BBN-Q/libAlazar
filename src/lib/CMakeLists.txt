@@ -48,7 +48,7 @@ if(SIM)
     )
 else()
     TARGET_LINK_LIBRARIES(Alazar
-        /c/windows/system32/ATSApi.dll
+        ATSApi
         Threads::Threads
     )
 endif()
@@ -64,12 +64,10 @@ ADD_EXECUTABLE(apiExample
 TARGET_LINK_LIBRARIES(apiExample
 	Alazar
 	Threads::Threads
-
 )
 
 ADD_EXECUTABLE(errorTest
 	./errorTest.cpp
-
 )
 
 TARGET_LINK_LIBRARIES(errorTest
@@ -79,7 +77,6 @@ TARGET_LINK_LIBRARIES(errorTest
 ADD_EXECUTABLE(unittest
 	./unittest.cpp
 	./testBufferQ.cpp
-
 )
 
 TARGET_LINK_LIBRARIES(unittest
