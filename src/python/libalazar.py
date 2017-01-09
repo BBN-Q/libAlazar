@@ -307,7 +307,7 @@ class ATS9870():
         if retVal < 0:
             raise AlazarError('ERROR %s: trigger failed' % self.name)
 
-    def register_socket(self, socket, channel):
+    def register_socket(self, channel, socket):
         retVal = _register_socket(self.addr, channel, socket.fileno())
         if retVal < 0:
             raise AlazarError('ERROR %s: register_socket failed' % self.name)
