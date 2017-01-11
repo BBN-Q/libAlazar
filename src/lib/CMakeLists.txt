@@ -1,4 +1,3 @@
-
 INCLUDE_DIRECTORIES("./")
 
 # include alazar SDK header files
@@ -6,7 +5,7 @@ if(NOT ALAZAR_INCLUDE_PATH)
     MESSAGE("ALAZAR_INCLUDE_PATH not specified. Will attempt to fetch sources at build time.")
     include(ExternalProject)
     ExternalProject_Add(ats-sdk
-        GIT_REPOSITORY git@qiplab.bbn.com:buq-lab/ats-sdk-headers.git
+        GIT_REPOSITORY https://qiplab.bbn.com/buq-lab/ats-sdk-headers.git
         PREFIX ${PROJECT_SOURCE_DIR}/ats-sdk/
         UPDATE_COMMAND git pull
         CONFIGURE_COMMAND ""
