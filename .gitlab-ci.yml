@@ -8,7 +8,7 @@ ubuntuBuild:
         - cd build
         - cmake -DSIM=true ../
         - make clean install
-        - export LD_LIBRARY_PATH=./bin
+        - export LD_LIBRARY_PATH=/usr/local/lib
         - cd ../src/python
         - which python
         - python -m unittest
@@ -24,8 +24,10 @@ windowsAPITest:
     script:
         - mkdir build
         - cd build
-        - cmake -G "MSYS Makefiles" -DSIM=true ../
+        - cmake -G "MSYS Makefiles" -DSIM=true -DCMAKE_INSTALL_PREFIX=dist ../
         - make clean install
+        - export PATH=$(pwd)/bin:$PATH
+        - echo $PATH
         - cd ../src/python
         - which python
         - python -m unittest
@@ -38,7 +40,7 @@ windowsDLLBuild:
     script:
         - mkdir build
         - cd build
-        - cmake -G "MSYS Makefiles" -DLOG_LEVEL=2 ../
+        - cmake -G "MSYS Makefiles" -DLOG_LEVEL=2 -DCMAKE_INSTALL_PREFIX=dist ../
         - make clean install
     tags:
         - windows

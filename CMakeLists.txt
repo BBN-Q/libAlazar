@@ -8,7 +8,10 @@
 PROJECT( libAlazar )
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
-SET(CMAKE_INSTALL_PREFIX .)
+set(ALAZAR_VERSION_MAJOR 0)
+set(ALAZAR_VERSION_MINOR 1)
+set(ALAZAR_VERSION_PATCH 0)
+set(ALAZAR_VERSION_STRING ${ALAZAR_VERSION_MAJOR}.${ALAZAR_VERSION_MINOR}.${ALAZAR_VERSION_PATCH})
 
 SET ( CMAKE_BUILD_TYPE Debug )
 
@@ -21,9 +24,9 @@ endif()
 add_definitions(-DLOG_LEVEL=${LOG_LEVEL})
 
 #alazar shared libraries
-if(NOT INSTALL_PATH)
-	set(INSTALL_PATH dist)
-endif()
+# if(NOT INSTALL_PATH)
+# 	set(INSTALL_PATH dist)
+# endif()
 
 add_subdirectory(src/lib)
 add_subdirectory(src/matlab)

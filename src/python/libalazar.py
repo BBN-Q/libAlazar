@@ -16,23 +16,22 @@
 # limitations under the License.
 
 import sys
-import os
-import time
-import zmq
-import platform
 from ctypes import *
+from ctypes.util import find_library
+import numpy.ctypeslib as npct
 import numpy as np
 
-osType = platform.system()
-if 'Darwin' in osType:
-    dll_name = '../../build/bin/libAlazar.dylib'
-elif 'Windows' in osType:
-    dll_name = '../../build/bin/libAlazar.dll'
+# load the shared library
+# try with and without "lib" prefix
+libpath = find_library("Alazar")
+if libpath is None:
+    libpath = find_library("libAlazar")
+# if we still can't find it, then try in the python prefix (where conda stores binaries)
+if libpath is None:
+    libpath = sys.prefix + '/lib'
+    lib = npct.load_library("libAlazar", libpath)
 else:
-    dll_name = '../../build/bin/libAlazar.so'
-
-dllabspath = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + dll_name
-lib = CDLL(dllabspath)
+    lib = CDLL(libpath)
 
 class ConfigData(Structure):
     _fields_ = [
