@@ -45,11 +45,14 @@ SET ( LIB_SRC
 SET_SOURCE_FILES_PROPERTIES( ${LIB_SRC} PROPERTIES LANGUAGE CXX )
 
 ADD_LIBRARY( Alazar SHARED ${LIB_SRC} )
-add_dependencies( Alazar version ats-sdk)
+add_dependencies( Alazar version ats-sdk )
+set_target_properties( Alazar PROPERTIES
+    VERSION ${ALAZAR_VERSION_STRING}
+    SOVERSION ${ALAZAR_VERSION_MAJOR}
+    MACOSX_RPATH 1
+)
 
-#todo - alazar api library needs to be a build parameter
-
-#Some compile flags
+# Some compile flags
 if(WIN32)
     ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall -O3")
 else()
@@ -57,9 +60,8 @@ else()
 endif()
 
 if(SIM)
-    #an alazar simulator is used for testing purposes
+    # an alazar simulator is used for testing purposes
     ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
-    set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     add_dependencies( AlazarSim ats-sdk )
     TARGET_LINK_LIBRARIES(Alazar
         AlazarSim
@@ -102,7 +104,26 @@ TARGET_LINK_LIBRARIES(unittest
 	Alazar
 )
 
-install(TARGETS Alazar apiExample errorTest unittest DESTINATION bin)
-install(TARGETS Alazar DESTINATION ${INSTALL_PATH})
-install(FILES libAlazarAPI.h DESTINATION ${INSTALL_PATH})
-install(FILES libAlazarAPI.h DESTINATION bin)
+install(
+    TARGETS Alazar apiExample errorTest unittest
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION ${PROJECT_BINARY_DIR}/bin
+)
+install(FILES libAlazarAPI.h DESTINATION include)
+
+if(APPLE)
+    set_target_properties(Alazar PROPERTIES INSTALL_RPATH "@loader_path")
+    set_target_properties(apiExample errorTest unittest PROPERTIES
+        INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+elseif(UNIX)
+    set_target_properties(Alazar PROPERTIES INSTALL_RPATH "\$ORIGIN")
+    set_target_properties(apiExample errorTest unittest PROPERTIES
+        INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+endif()
+
+# Basic "package" target
+SET(CPACK_GENERATOR "TGZ")
+SET(CPACK_PACKAGE_VERSION_MAJOR ${ALAZAR_VERSION_MAJOR})
+SET(CPACK_PACKAGE_VERSION_MINOR ${ALAZAR_VERSION_MINOR})
+SET(CPACK_PACKAGE_VERSION_PATCH ${ALAZAR_VERSION_PATCH})
+INCLUDE(CPack)
