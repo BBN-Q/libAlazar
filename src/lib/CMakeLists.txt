@@ -1,7 +1,25 @@
-
 INCLUDE_DIRECTORIES("./")
+
+# include alazar SDK header files
+if(NOT ALAZAR_INCLUDE_PATH)
+    MESSAGE("ALAZAR_INCLUDE_PATH not specified. Will attempt to fetch sources at build time.")
+    include(ExternalProject)
+    ExternalProject_Add(ats-sdk
+        GIT_REPOSITORY https://qiplab.bbn.com/buq-lab/ats-sdk-headers.git
+        PREFIX ${PROJECT_SOURCE_DIR}/ats-sdk/
+        UPDATE_COMMAND git pull
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+    )
+    ExternalProject_Get_Property(ats-sdk SOURCE_DIR)
+    set(ALAZAR_INCLUDE_PATH ${SOURCE_DIR})
+else()
+    ADD_CUSTOM_TARGET( ats-sdk
+        COMMAND echo "Using system ATS SDK at: " ${ALAZAR_INCLUDE_PATH}
+    )
+endif()
 INCLUDE_DIRECTORIES(${ALAZAR_INCLUDE_PATH})
-MESSAGE("INCLUDE DIRS ${ALAZAR_INCLUDE_PATH}")
 INCLUDE_DIRECTORIES("../../deps/Catch/include")
 INCLUDE_DIRECTORIES("../../deps/readerwriterqueue")
 
@@ -27,7 +45,7 @@ SET ( LIB_SRC
 SET_SOURCE_FILES_PROPERTIES( ${LIB_SRC} PROPERTIES LANGUAGE CXX )
 
 ADD_LIBRARY( Alazar SHARED ${LIB_SRC} )
-add_dependencies( Alazar version )
+add_dependencies( Alazar version ats-sdk)
 
 #todo - alazar api library needs to be a build parameter
 
@@ -42,6 +60,7 @@ if(SIM)
     #an alazar simulator is used for testing purposes
     ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
     set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+    add_dependencies( AlazarSim ats-sdk )
     TARGET_LINK_LIBRARIES(Alazar
         AlazarSim
         Threads::Threads

@@ -2,3 +2,4 @@
 src/lib/version.h
 build
 *__pycache__*
+ats-sdk

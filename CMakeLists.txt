@@ -21,11 +21,6 @@ endif()
 add_definitions(-DLOG_LEVEL=${LOG_LEVEL})
 
 #alazar shared libraries
-if(NOT ALAZAR_INCLUDE_PATH)
-	get_filename_component(ALAZAR_INCLUDE_PATH ATS9870_dll_5_10_6/ ABSOLUTE)
-endif()
-
-#alazar shared libraries
 if(NOT INSTALL_PATH)
 	set(INSTALL_PATH dist)
 endif()
