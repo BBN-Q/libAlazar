@@ -22,10 +22,12 @@ import numpy.ctypeslib as npct
 import numpy as np
 
 # load the shared library
-libpath = find_library("libAlazar")
+libpath = find_library("Alazar")
 if libpath is None:
     libpath = sys.prefix + '/lib'
-lib = npct.load_library("libAlazar", libpath)
+    lib = npct.load_library("libAlazar", libpath)
+else:
+    lib = CDLL(libpath)
 
 class ConfigData(Structure):
     _fields_ = [

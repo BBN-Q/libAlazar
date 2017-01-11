@@ -8,6 +8,7 @@ ubuntuBuild:
         - cd build
         - cmake -DSIM=true ../
         - make clean install
+        - export LD_LIBRARY_PATH=/usr/local/lib
         - cd ../src/python
         - which python
         - python -m unittest
