@@ -61,6 +61,7 @@ if(SIM)
     #an alazar simulator is used for testing purposes
     ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
     set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+    add_dependencies( AlazarSim ats-sdk )
     TARGET_LINK_LIBRARIES(Alazar
         AlazarSim
         Threads::Threads
