@@ -26,8 +26,11 @@ windowsAPITest:
         - cd build
         - cmake -G "MSYS Makefiles" -DSIM=true -DCMAKE_INSTALL_PREFIX=dist ../
         - make clean install
+        - export PATH=$(pwd)/bin:$PATH
+        - echo $PATH
         - cd ../src/python
         - which python
+        - python -c "import os; print(os.environ['PATH'])"
         - python -m unittest
         - cd ../../build
     tags:
