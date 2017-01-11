@@ -22,7 +22,11 @@ import numpy.ctypeslib as npct
 import numpy as np
 
 # load the shared library
+# try with and without "lib" prefix
 libpath = find_library("Alazar")
+if libpath is None:
+    libpath = find_library("libAlazar")
+# if we still can't find it, then try in the python prefix (where conda stores binaries)
 if libpath is None:
     libpath = sys.prefix + '/lib'
     lib = npct.load_library("libAlazar", libpath)

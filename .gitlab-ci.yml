@@ -30,7 +30,6 @@ windowsAPITest:
         - echo $PATH
         - cd ../src/python
         - which python
-        - python -c "import os; print(os.environ['PATH'])"
         - python -m unittest
         - cd ../../build
     tags:
