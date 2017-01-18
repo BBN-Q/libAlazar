@@ -8,8 +8,20 @@
 PROJECT( libAlazar )
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
-set(ALAZAR_VERSION_MAJOR 0)
-set(ALAZAR_VERSION_MINOR 1)
+# build the library version string from git
+execute_process(
+  COMMAND git describe --dirty
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_DESCRIBE
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+string( REGEX MATCH "^v([0-9]+)\.([0-9]+)" VERSION_STRING ${GIT_DESCRIBE} )
+
+if (NOT VERSION_STRING)
+  message(WARNING "Failed to extract version string from 'git describe'")
+endif()
+set(ALAZAR_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(ALAZAR_VERSION_MINOR ${CMAKE_MATCH_2})
 set(ALAZAR_VERSION_PATCH 0)
 set(ALAZAR_VERSION_STRING ${ALAZAR_VERSION_MAJOR}.${ALAZAR_VERSION_MINOR}.${ALAZAR_VERSION_PATCH})
 
@@ -22,11 +34,6 @@ if( NOT LOG_LEVEL)
 endif()
 
 add_definitions(-DLOG_LEVEL=${LOG_LEVEL})
-
-#alazar shared libraries
-# if(NOT INSTALL_PATH)
-# 	set(INSTALL_PATH dist)
-# endif()
 
 add_subdirectory(src/lib)
 add_subdirectory(src/matlab)
