@@ -26,7 +26,6 @@ limitations under the License.
 #include <sys/time.h>
 #include <thread>
 #include <time.h>
-#include <unistd.h>
 #include <cstring>
 #include <cmath>
 
