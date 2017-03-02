@@ -1,6 +1,11 @@
 INCLUDE_DIRECTORIES("./")
 
 # include alazar SDK header files
+if(MSVC AND DEFINED ENV{AlazarSDK})
+  message("Linking to Alazar library defined by AlazarSDK environment variable.")
+  link_directories("$ENV{AlazarSDK}/Library/x64")
+endif()
+
 if(NOT ALAZAR_INCLUDE_PATH)
     MESSAGE("ALAZAR_INCLUDE_PATH not specified. Will attempt to fetch sources at build time.")
     include(ExternalProject)
@@ -15,9 +20,8 @@ if(NOT ALAZAR_INCLUDE_PATH)
     ExternalProject_Get_Property(ats-sdk SOURCE_DIR)
     set(ALAZAR_INCLUDE_PATH ${SOURCE_DIR})
 else()
-    ADD_CUSTOM_TARGET( ats-sdk
-        COMMAND echo "Using system ATS SDK at: " ${ALAZAR_INCLUDE_PATH}
-    )
+    message("Using ATS SDK headers from: ${ALAZAR_INCLUDE_PATH}")
+    ADD_CUSTOM_TARGET( ats-sdk )
 endif()
 INCLUDE_DIRECTORIES(${ALAZAR_INCLUDE_PATH})
 INCLUDE_DIRECTORIES("../../deps/Catch/include")
@@ -49,12 +53,22 @@ add_dependencies( Alazar version ats-sdk )
 set_target_properties( Alazar PROPERTIES
     VERSION ${ALAZAR_VERSION_STRING}
     SOVERSION ${ALAZAR_VERSION_MAJOR}
+    PREFIX "lib" # force lib prefix even on Windows
     MACOSX_RPATH 1
 )
 
-# Some compile flags
-if(WIN32)
-    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall -O3")
+# don't let windows.h clobber std::min and std::max
+if(MSVC)
+    add_definitions(-DNOMINMAX)
+endif()
+
+# compiler warnings
+if(MSVC)
+    # on MSVC compress warnings about:
+    #   "unsafe" print functions (4996)
+    #   initializers (4244),
+    #   size_t conversions (4267)
+    ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "/W3 /wd4996 /wd4244 /wd4267")
 else()
     ADD_DEFINITIONS(${CMAKE_CXX_FLAGS} "-Wall")
 endif()
@@ -88,6 +102,7 @@ TARGET_LINK_LIBRARIES(apiExample
 	Threads::Threads
 )
 
+if (NOT MSVC)
 ADD_EXECUTABLE(errorTest
 	./errorTest.cpp
 )
@@ -95,6 +110,7 @@ ADD_EXECUTABLE(errorTest
 TARGET_LINK_LIBRARIES(errorTest
 	Alazar
 )
+endif()
 
 ADD_EXECUTABLE(unittest
 	./unittest.cpp
@@ -106,7 +122,7 @@ TARGET_LINK_LIBRARIES(unittest
 )
 
 install(
-    TARGETS Alazar apiExample errorTest unittest
+    TARGETS Alazar apiExample unittest
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION ${PROJECT_BINARY_DIR}/bin
 )
