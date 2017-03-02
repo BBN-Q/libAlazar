@@ -102,14 +102,17 @@ TARGET_LINK_LIBRARIES(apiExample
 	Threads::Threads
 )
 
-if (NOT MSVC)
 ADD_EXECUTABLE(errorTest
 	./errorTest.cpp
+  ${LIB_SRC}
 )
 
 TARGET_LINK_LIBRARIES(errorTest
-	Alazar
+  ATSApi
+  Threads::Threads
 )
+if(WIN32)
+    TARGET_LINK_LIBRARIES(errorTest ws2_32)
 endif()
 
 ADD_EXECUTABLE(unittest
