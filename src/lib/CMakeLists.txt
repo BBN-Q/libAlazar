@@ -122,9 +122,9 @@ TARGET_LINK_LIBRARIES(unittest
 )
 
 install(
-    TARGETS Alazar apiExample unittest
+    TARGETS Alazar
     LIBRARY DESTINATION lib
-    RUNTIME DESTINATION ${PROJECT_BINARY_DIR}/bin
+    RUNTIME DESTINATION bin
 )
 install(FILES libAlazarAPI.h DESTINATION include)
 
