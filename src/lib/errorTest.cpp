@@ -4,7 +4,6 @@
 //#include <stdlib.h>
 #include <iostream>
 #include <map>
-#include <unistd.h>
 #include <cstring>
 
 #include "AlazarError.h"

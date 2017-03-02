@@ -20,7 +20,6 @@ limitations under the License.
 #include <iostream>
 #include <stdio.h>
 #include <string>
-#include <sys/time.h>
 #include <thread>
 #include <time.h>
 

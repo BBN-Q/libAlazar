@@ -23,16 +23,17 @@ limitations under the License.
 #include <list>
 #include <sstream>
 #include <string>
-#include <sys/time.h>
 #include <thread>
 #include <time.h>
 #include <cstring>
 #include <cmath>
 
 #ifndef _WIN32
-#include <sys/socket.h>
+  #include <sys/socket.h>
 #else
-#include <winsock2.h>
+  #include <winsock2.h>
+  #include <basetsd.h>
+  typedef SSIZE_T ssize_t;
 #endif
 
 #include "libAlazar.h"
