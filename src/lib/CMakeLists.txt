@@ -78,17 +78,15 @@ if(SIM)
     ADD_LIBRARY( AlazarSim STATIC alazarSim.cpp )
     set_property(TARGET AlazarSim PROPERTY POSITION_INDEPENDENT_CODE TRUE)
     add_dependencies( AlazarSim ats-sdk )
-    TARGET_LINK_LIBRARIES(Alazar
-        AlazarSim
-        Threads::Threads
-    )
+    set(ATS_LIB AlazarSim)
 else()
-    TARGET_LINK_LIBRARIES(Alazar
-        ATSApi
-        Threads::Threads
-    )
+    set(ATS_LIB ATSApi)
 endif()
 
+TARGET_LINK_LIBRARIES(Alazar
+    ${ATS_LIB}
+    Threads::Threads
+)
 if(WIN32)
     TARGET_LINK_LIBRARIES(Alazar ws2_32)
 endif()
@@ -108,7 +106,7 @@ ADD_EXECUTABLE(errorTest
 )
 
 TARGET_LINK_LIBRARIES(errorTest
-  ATSApi
+  ${ATS_LIB}
   Threads::Threads
 )
 if(WIN32)
