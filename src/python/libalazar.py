@@ -103,6 +103,8 @@ class ATS9870():
 
     def __init__(self,logFile='alazar.log',bufferType='raw'):
 
+        self.addr = None
+
         self.config={
             'acquireMode':'averager',
             'bandwidth':'Full',
@@ -309,9 +311,11 @@ class ATS9870():
         return status
 
     def stop(self):
-        retVal = _stop(self.addr)
-        if retVal < 0:
-            raise AlazarError('ERROR %s: stop failed' % self.name)
+        # Don't bother if we've never connected
+        if self.addr is not None:
+            retVal = _stop(self.addr)
+            if retVal < 0:
+                raise AlazarError('ERROR %s: stop failed' % self.name)
 
     def disconnect(self):
         retVal = _disconnect(self.addr)
