@@ -173,6 +173,13 @@ int32_t register_socket(uint32_t boardId, uint32_t channel, int32_t socket) {
     return 0;
 }
 
+int32_t unregister_sockets(uint32_t boardId) {
+    AlazarATS9870 &board = boards[boardId - 1];
+    board.sockets[0] = -1;
+    board.sockets[1] = -1;
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

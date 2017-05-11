@@ -91,6 +91,10 @@ _register_socket = lib.register_socket
 _register_socket.argtypes = [c_uint32, c_uint32, c_int32]
 _register_socket.restype = c_int32
 
+_unregister_sockets = lib.unregister_sockets
+_unregister_sockets.argtypes = [c_uint32]
+_unregister_sockets.restype = c_int32
+
 class AlazarError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -331,6 +335,11 @@ class ATS9870():
         retVal = _register_socket(self.addr, channel, socket.fileno())
         if retVal < 0:
             raise AlazarError('ERROR %s: register_socket failed' % self.name)
+
+    def unregister_sockets(self):
+        retVal = _unregister_sockets(self.addr)
+        if retVal < 0:
+            raise AlazarError('ERROR %s: unregister_sockets failed' % self.name)
 
     def generateTestPattern(self):
 

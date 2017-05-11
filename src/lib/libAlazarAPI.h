@@ -67,6 +67,7 @@ APIEXPORT int32_t stop(uint32_t boardID);
 APIEXPORT int32_t flash_led(int32_t numTimes, float period);
 APIEXPORT int32_t force_trigger( uint32_t boardID );
 APIEXPORT int32_t register_socket(uint32_t boardID, uint32_t channel, int32_t socket);
+APIEXPORT int32_t unregister_sockets(uint32_t boardID);
 
 #ifdef __cplusplus
 }
