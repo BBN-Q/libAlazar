@@ -36,10 +36,14 @@ find_package(Threads REQUIRED)
 #we need C++11 support
 set(CMAKE_CXX_STANDARD 11)
 
-add_custom_target (
-    version ALL
-    COMMAND cd ${CMAKE_CURRENT_LIST_DIR} && sh ${CMAKE_CURRENT_LIST_DIR}/version.sh > ${CMAKE_CURRENT_LIST_DIR}/version.h
- )
+# create or update the version header file with the latest git describe
+# see https://cmake.org/pipermail/cmake/2010-July/038015.html
+add_custom_target(update_version
+    ${CMAKE_COMMAND} -D SRC=${CMAKE_SOURCE_DIR}/src/lib/version_template.h
+                     -D DST=${CMAKE_BINARY_DIR}/generated/version.h
+                     -P ${CMAKE_SOURCE_DIR}/src/lib/version.cmake
+)
+include_directories(${CMAKE_BINARY_DIR}/generated)
 
 SET ( LIB_SRC
 	./libAlazar.cpp
@@ -49,7 +53,7 @@ SET ( LIB_SRC
 SET_SOURCE_FILES_PROPERTIES( ${LIB_SRC} PROPERTIES LANGUAGE CXX )
 
 ADD_LIBRARY( Alazar SHARED ${LIB_SRC} )
-add_dependencies( Alazar version ats-sdk )
+add_dependencies( Alazar update_version ats-sdk )
 set_target_properties( Alazar PROPERTIES
     VERSION ${ALAZAR_VERSION_STRING}
     SOVERSION ${ALAZAR_VERSION_MAJOR}
