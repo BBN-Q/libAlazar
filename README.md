@@ -9,7 +9,7 @@ event interfaces through OS file/socket watchers.
 
 # Build Status
 
-[![master status](https://qiplab.bbn.com/ci/projects/4/status.png?ref=master)](https://qiplab.bbn.com/ci/projects/4?ref=master)
+[![build status](https://qiplab.bbn.com/buq-lab/libAlazar/badges/master/build.svg)](https://qiplab.bbn.com/buq-lab/libAlazar/commits/master)
 
 
 # Build Instructions
