@@ -361,7 +361,7 @@ int32_t AlazarATS9870::rx(void) {
             return -1;
           }
           status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff->data()), buf_size, 0);
-          if (status != buf_size) {
+          if (status < 0 || (size_t)status != buf_size) {
             FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
                                << "Tried to write " << buf_size << " bytes,"
                                << "Actually wrote " << status << " bytes.";
@@ -380,7 +380,7 @@ int32_t AlazarATS9870::rx(void) {
             return -1;
           }
           status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff->data()), buf_size, 0);
-          if (status != buf_size) {
+          if (status < 0 || (size_t)status != buf_size) {
             FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
                                << "Tried to write " << buf_size << " bytes,"
                                << "Actually wrote " << status << " bytes.";
