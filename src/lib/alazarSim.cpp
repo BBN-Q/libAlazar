@@ -79,7 +79,7 @@ RETURN_CODE AlazarGetSDKVersion(uint8_t *MajorNumber, uint8_t *MinorNumber,
   return ApiSuccess;
 }
 
-uint32_t AlazarNumOfSystems() { return 1; }
+U32 AlazarNumOfSystems() { return 1; }
 
 /*
 NOTE:  The list of enums used for the return codes in the API header file from
@@ -295,4 +295,4 @@ RETURN_CODE AlazarAbortAsyncRead(HANDLE hBoard) {
 
 RETURN_CODE AlazarForceTrigger(HANDLE hBoard) { return ApiSuccess; }
 
-uint32_t AlazarTriggered(HANDLE board) { return 1; }
+U32 AlazarTriggered(HANDLE board) { return 1; }

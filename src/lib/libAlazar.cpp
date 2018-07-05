@@ -834,7 +834,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
     return -1;
   }
 
-  uint32_t samplesPerChannel;
+  U32 samplesPerChannel;
   BYTE bitsPerSample;
   retCode = AlazarGetChannelInfo(handle, &samplesPerChannel, &bitsPerSample);
   if (retCode != ApiSuccess) {
@@ -843,7 +843,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
     return -1;
   }
 
-  uint32_t aspocType;
+  U32 aspocType;
   retCode = AlazarQueryCapability(handle, ASOPC_TYPE, 0, &aspocType);
   if (retCode != ApiSuccess) {
     FILE_LOG(logERROR) << "AlazarQueryCapability failed -- "
@@ -860,7 +860,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
     return -1;
   }
 
-  uint32_t serialNumber;
+  U32 serialNumber;
   retCode = AlazarQueryCapability(handle, GET_SERIAL_NUMBER, 0, &serialNumber);
   if (retCode != ApiSuccess) {
     FILE_LOG(logERROR) << "AlazarQueryCapability failed -- "
@@ -868,7 +868,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
     return -1;
   }
 
-  uint32_t latestCalDate;
+  U32 latestCalDate;
   retCode =
       AlazarQueryCapability(handle, GET_LATEST_CAL_DATE, 0, &latestCalDate);
   if (retCode != ApiSuccess) {
@@ -896,7 +896,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
   if (IsPcieDevice(handle)) {
     // Display PCI Express link information
 
-    uint32_t linkSpeed;
+    U32 linkSpeed;
     retCode = AlazarQueryCapability(handle, GET_PCIE_LINK_SPEED, 0, &linkSpeed);
     if (retCode != ApiSuccess) {
       FILE_LOG(logERROR) << "AlazarQueryCapability failed -- "
@@ -904,7 +904,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
       return -1;
     }
 
-    uint32_t linkWidth;
+    U32 linkWidth;
     retCode = AlazarQueryCapability(handle, GET_PCIE_LINK_WIDTH, 0, &linkWidth);
     if (retCode != ApiSuccess) {
       FILE_LOG(logERROR) << "Error: AlazarQueryCapability failed -- "
