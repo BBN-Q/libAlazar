@@ -122,7 +122,7 @@ protected:
   int32_t FlashLed(HANDLE handle, int32_t cycleCount, uint32_t cyclePeriod_ms);
 
   std::string BoardTypeToText(int boardType);
-  int32_t rx(void);
+  int32_t rx(int32_t *ready);
   int32_t getBufferSize(void);
 
   // map mV input scale to RangeId

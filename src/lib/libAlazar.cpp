@@ -27,6 +27,9 @@ limitations under the License.
 #include <time.h>
 #include <cstring>
 #include <cmath>
+#include <mutex>
+
+std::mutex mu;
 
 #ifndef _WIN32
   #include <sys/socket.h>
@@ -305,10 +308,14 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   return 0;
 }
 
-int32_t AlazarATS9870::rx(void) {
+int32_t AlazarATS9870::rx(int32_t* ready) {
   RETURN_CODE retCode;
   uint32_t count = 0;
   FILE_LOG(logDEBUG4) << "STARTING RX THREAD";
+
+  mu.lock();
+  *ready = 1;
+  mu.unlock();
 
   while (bufferCounter < static_cast<int32_t>(nbrBuffers)) {
     std::shared_ptr<std::vector<uint8_t>> buff;
@@ -445,9 +452,15 @@ int32_t AlazarATS9870::rxThreadRun(void) {
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
   }
-  rxThread = std::thread(&AlazarATS9870::rx, this);
+  int32_t ready = 0;
+  uint32_t sleep_time = 50;
+  rxThread = std::thread(&AlazarATS9870::rx, this, &ready);
   threadRunning = true;
-
+  while (ready != 1) {
+    FILE_LOG(logINFO) << "Waiting for Alazar to begin acq";
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
+  }
+  FILE_LOG(logINFO) << "Alazar ready to acq";
   return 0;
 }
 
