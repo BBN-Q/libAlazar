@@ -305,6 +305,18 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   ch1WorkBuff = new std::vector<float>(samplesPerAcquisition);
   ch2WorkBuff = new std::vector<float>(samplesPerAcquisition);
 
+  uint32_t m = sizeof(socketbuffsize);
+  #ifdef _WIN32
+    socketbuffsize = 65536; // placeholder for now
+    size_t num_floats = socketbuffsize/sizeof(float);
+  #else
+    int32_t fdsocket = socket(AF_UNIX,SOCK_STREAM,0);
+    getsockopt(fdsocket,SOL_SOCKET,SO_RCVBUF,(void *)&socketbuffsize, &m);
+    size_t num_floats = socketbuffsize/sizeof(float);
+    socketbuffsize = (num_floats-1)*sizeof(float);
+  #endif
+    FILE_LOG(logINFO) << "num floats per send: " << num_floats;
+    FILE_LOG(logINFO) << "socket buffer size: " << socketbuffsize;
   return 0;
 }
 
@@ -352,48 +364,61 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
                        ch1WorkBuff->data(),
                        ch2WorkBuff->data()
                      );
+      FILE_LOG(logDEBUG4) << "Full Attempting to write to socket, full: " << full;
       if (full) {
         ssize_t status;
+        FILE_LOG(logDEBUG4) << "Work buff size: " << ch1WorkBuff->size();
         size_t buf_size = ch1WorkBuff->size() * sizeof(float);
-        char* msg_size = reinterpret_cast<char *>(&buf_size);
-        if (sockets[0] != -1) {
-          status = send(sockets[0], msg_size, sizeof(size_t), 0);
-          if (status != sizeof(size_t)) {
-            FILE_LOG(logERROR) << "Error writing msg_size to socket,"
-            #ifdef _WIN32
-                               << " received error: " << WSAGetLastError();
-            #else
-                               << " received error: " << std::strerror(errno);
-            #endif
-            return -1;
+        size_t buf_size_rem = buf_size;
+        size_t sock_send_size, buf_size_sent = 0;
+        do {
+          sock_send_size = std::min(buf_size_rem,socketbuffsize);
+          char* msg_size = reinterpret_cast<char *>(&sock_send_size);
+          FILE_LOG(logDEBUG4) << "Sending thru socket: " << sock_send_size;
+          if (sockets[0] != -1) {
+            status = send(sockets[0], msg_size, sizeof(size_t), 0);
+            FILE_LOG(logDEBUG4) << "Tried to send thru socket: " << sock_send_size;
+            if (status != sizeof(size_t)) {
+              FILE_LOG(logERROR) << "Error writing msg_size to socket,"
+              #ifdef _WIN32
+                                 << " received error: " << WSAGetLastError();
+              #else
+                                 << " received error: " << std::strerror(errno);
+              #endif
+              return -1;
+            }
+            status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff->data()+buf_size_sent), sock_send_size, 0);
+            if (status < 0 || (size_t)status != sock_send_size) {
+              FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
+                                 << "Tried to write " << buf_size << " bytes,"
+                                 << "Actually wrote " << status << " bytes.";
+              return -1;
+            }
           }
-          status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff->data()), buf_size, 0);
-          if (status < 0 || (size_t)status != buf_size) {
-            FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
-                               << "Tried to write " << buf_size << " bytes,"
-                               << "Actually wrote " << status << " bytes.";
-            return -1;
+          if (sockets[1] != -1) {
+            status = send(sockets[1], msg_size, sizeof(size_t), 0);
+            if (status != sizeof(size_t)) {
+              FILE_LOG(logERROR) << "Error writing msg_size to socket,"
+              #ifdef _WIN32
+                                 << " received error: " << WSAGetLastError();
+              #else
+                                 << " received error: " << std::strerror(errno);
+              #endif
+              return -1;
+            }
+            status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff->data()+buf_size_sent), sock_send_size, 0);
+            if (status < 0 || (size_t)status != sock_send_size) {
+              FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
+                                 << "Tried to write " << buf_size << " bytes,"
+                                 << "Actually wrote " << status << " bytes.";
+              return -1;
+            }
           }
-        }
-        if (sockets[1] != -1) {
-          status = send(sockets[1], msg_size, sizeof(size_t), 0);
-          if (status != sizeof(size_t)) {
-            FILE_LOG(logERROR) << "Error writing msg_size to socket,"
-            #ifdef _WIN32
-                               << " received error: " << WSAGetLastError();
-            #else
-                               << " received error: " << std::strerror(errno);
-            #endif
-            return -1;
-          }
-          status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff->data()), buf_size, 0);
-          if (status < 0 || (size_t)status != buf_size) {
-            FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
-                               << "Tried to write " << buf_size << " bytes,"
-                               << "Actually wrote " << status << " bytes.";
-            return -1;
-          }
-        }
+          buf_size_rem = buf_size_rem - sock_send_size;
+          buf_size_sent = (buf_size-buf_size_rem)/sizeof(float);
+          FILE_LOG(logDEBUG4) << "Buff size remaining: " << buf_size_rem;
+          FILE_LOG(logDEBUG4) << "Buff size sent: " << buf_size_sent;
+        } while(buf_size_rem > 0);
       }
       // repost the buffer if we are not done
       if (bufferCounter < static_cast<int32_t>(nbrBuffers)) {

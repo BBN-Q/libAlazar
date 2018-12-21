@@ -38,6 +38,7 @@ limitations under the License.
 #define MIN_NUM_BUFFERS 2
 #define MAX_BUFFER_SIZE 256000000 // 256M
 #define PREF_BUFFER_SIZE 4000000 // 4M (suggestion from Alazar manual for DMA transfers)
+#define SOCKET_TX_MAX 219264
 
 class AlazarATS9870 {
 
@@ -157,6 +158,7 @@ protected:
 
   uint32_t recordsPerBuffer;
   uint32_t recordsPerAcquisition;
+  size_t  socketbuffsize;
 
   std::map<std::string, bool> modeMap = {
       {"digitizer", false}, {"averager", true},

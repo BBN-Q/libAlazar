@@ -33,6 +33,8 @@ endif()
 
 add_definitions(-DLOG_LEVEL=${LOG_LEVEL})
 
+set(UNIX 1)
+
 add_subdirectory(src/lib)
 add_subdirectory(src/matlab)
 add_subdirectory(src/python)
