@@ -4,3 +4,9 @@
 [submodule "deps/readerwriterqueue"]
 	path = deps/readerwriterqueue
 	url = https://github.com/cameron314/readerwriterqueue.git
+[submodule "plog"]
+	path = plog
+	url = https://github.com/SergiusTheBest/plog.git
+[submodule "deps/plog"]
+	path = deps/plog
+	url = https://github.com/SergiusTheBest/plog.git

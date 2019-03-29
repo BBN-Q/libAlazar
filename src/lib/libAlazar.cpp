@@ -42,15 +42,15 @@ std::mutex mu;
 #include "libAlazar.h"
 #include "libAlazarAPI.h"
 #include "logger.h"
-
+  
 using namespace std;
 
 AlazarATS9870::AlazarATS9870() : threadStop(false), threadRunning(false) {
-  FILE_LOG(logDEBUG4) << "Constructing ... ";
+  LOG(plog::verbose) << "Constructing ... ";
 }
 
 AlazarATS9870::~AlazarATS9870() {
-  FILE_LOG(logDEBUG4) << "Destructing ...";
+  LOG(plog::verbose) << "Destructing ...";
 
   RETURN_CODE retCode = AlazarCloseAUTODma(boardHandle);
   if (retCode != ApiSuccess) {
@@ -66,7 +66,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
 
   boardHandle = AlazarGetBoardBySystemID(systemId, boardId);
   if (boardHandle == NULL) {
-    FILE_LOG(logERROR) << "Open systemId " << systemId << " boardId " << boardId
+    LOG(plog::error) << "Open systemId " << systemId << " boardId " << boardId
                        << " failed";
     return -1;
   }
@@ -74,7 +74,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   // set averager mode or digitizer mode
   const char *acquireModeKey = config.acquireMode;
   if (modeMap.find(acquireModeKey) == modeMap.end()) {
-    FILE_LOG(logERROR) << "Invalid Mode: " << acquireModeKey;
+    LOG(plog::error) << "Invalid Mode: " << acquireModeKey;
     return (-1);
   }
   averager = modeMap[config.acquireMode];
@@ -84,10 +84,10 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   // so the sample rate is 1e9/decimation; decimation factor has to be 1,2,4
   // or any multiple of 10
   uint32_t decimation = 1000000000 / static_cast<uint32_t>(config.samplingRate);
-  FILE_LOG(logINFO) << "Decimation " << decimation;
+  LOG(plog::info) << "Decimation " << decimation;
   if (decimation != 1 && decimation != 2 && decimation != 4) {
     if (decimation % 10 != 0) {
-      FILE_LOG(logERROR) << "Decimation is not a Mulitple of 2,4,or 10 ";
+      LOG(plog::error) << "Decimation is not a Mulitple of 2,4,or 10 ";
       return (-1);
     }
   }
@@ -111,19 +111,19 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
 
   uint32_t rangeIDKey = static_cast<uint32_t>(std::lround(config.verticalScale * 1000));
   if (rangeIdMap.find(rangeIDKey) == rangeIdMap.end()) {
-    FILE_LOG(logERROR) << "Invalid Channel Scale: " << rangeIDKey;
+    LOG(plog::error) << "Invalid Channel Scale: " << rangeIDKey;
     return (-1);
   }
 
   const char *couplingKey = config.verticalCoupling;
   if (couplingMap.find(couplingKey) == couplingMap.end()) {
-    FILE_LOG(logERROR) << "Invalid Channel Coupling: " << couplingKey;
+    LOG(plog::error) << "Invalid Channel Coupling: " << couplingKey;
     return (-1);
   }
 
-  FILE_LOG(logINFO) << "Input Range: " << channelScale
+  LOG(plog::info) << "Input Range: " << channelScale
                     << " ID: " << rangeIdMap[rangeIDKey];
-  FILE_LOG(logINFO) << "Counts2Volts: " << counts2Volts;
+  LOG(plog::info) << "Counts2Volts: " << counts2Volts;
 
   retCode =
       AlazarInputControl(boardHandle,              // HANDLE -- board handle
@@ -140,7 +140,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
 
   const char *bandwidthKey = config.bandwidth;
   if (bandwidthMap.find(bandwidthKey) == bandwidthMap.end()) {
-    FILE_LOG(logERROR) << "Invalid Mode: " << bandwidthKey;
+    LOG(plog::error) << "Invalid Mode: " << bandwidthKey;
     return (-1);
   }
   retCode = AlazarSetBWLimit(
@@ -183,17 +183,17 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   uint32_t trigChannelRange = 5;
   uint32_t trigLevelCode = static_cast<uint32_t>(
       128 + 127 * (config.triggerLevel / 1000 / trigChannelRange));
-  FILE_LOG(logINFO) << "Trigger Level Code " << trigLevelCode;
+  LOG(plog::info) << "Trigger Level Code " << trigLevelCode;
 
   const char *triggerSourceKey = config.triggerSource;
   if (triggerSourceMap.find(triggerSourceKey) == triggerSourceMap.end()) {
-    FILE_LOG(logERROR) << "Invalid Trigger Source ID: " << triggerSourceKey;
+    LOG(plog::error) << "Invalid Trigger Source ID: " << triggerSourceKey;
     return (-1);
   }
 
   const char *triggerSlopeMapKey = config.triggerSlope;
   if (triggerSlopeMap.find(triggerSlopeMapKey) == triggerSlopeMap.end()) {
-    FILE_LOG(logERROR) << "Invalid Trigger Coupling: " << triggerSlopeMapKey;
+    LOG(plog::error) << "Invalid Trigger Coupling: " << triggerSlopeMapKey;
     return (-1);
   }
 
@@ -218,7 +218,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   // TODO - add channel based triggering
   couplingKey = config.triggerCoupling;
   if (couplingMap.find(couplingKey) == couplingMap.end()) {
-    FILE_LOG(logERROR) << "Invalid Trigger Coupling: " << couplingKey;
+    LOG(plog::error) << "Invalid Trigger Coupling: " << couplingKey;
     return (-1);
   }
 
@@ -235,7 +235,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
 
   // set the trigger delay in samples
   uint32_t trigDelayPts = config.samplingRate * config.delay;
-  FILE_LOG(logINFO) << "Trigger Delay " << trigDelayPts;
+  LOG(plog::info) << "Trigger Delay " << trigDelayPts;
   retCode = AlazarSetTriggerDelay(boardHandle, trigDelayPts);
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
@@ -255,16 +255,16 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   recordLength = config.recordLength;
 
   if (recordLength < 256) {
-    FILE_LOG(logERROR) << "recordLength less than 256";
+    LOG(plog::error) << "recordLength less than 256";
     return -1;
   }
 
   if (recordLength % 64 != 0) {
-    FILE_LOG(logERROR) << "recordLength is not aligned on a 64 sample boundary";
+    LOG(plog::error) << "recordLength is not aligned on a 64 sample boundary";
     return -1;
   }
 
-  FILE_LOG(logINFO) << "recordLength: " << recordLength;
+  LOG(plog::info) << "recordLength: " << recordLength;
   retCode = AlazarSetRecordSize(boardHandle, 0, recordLength);
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
@@ -299,8 +299,8 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   }
 
   samplesPerAcquisition = acqParams.samplesPerAcquisition;
-  FILE_LOG(logINFO) << "samplesPerAcquisition: " << samplesPerAcquisition;
-  FILE_LOG(logINFO) << "numberAcquisitions: " << acqParams.numberAcquisitions;
+  LOG(plog::info) << "samplesPerAcquisition: " << samplesPerAcquisition;
+  LOG(plog::info) << "numberAcquisitions: " << acqParams.numberAcquisitions;
 
   ch1WorkBuff = new std::vector<float>(samplesPerAcquisition);
   ch2WorkBuff = new std::vector<float>(samplesPerAcquisition);
@@ -315,15 +315,15 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     size_t num_floats = socketbuffsize/sizeof(float);
     socketbuffsize = (num_floats-1)*sizeof(float);
   #endif
-    FILE_LOG(logINFO) << "num floats per send: " << num_floats;
-    FILE_LOG(logINFO) << "socket buffer size: " << socketbuffsize;
+    LOG(plog::info) << "num floats per send: " << num_floats;
+    LOG(plog::info) << "socket buffer size: " << socketbuffsize;
   return 0;
 }
 
 int32_t AlazarATS9870::rx(int32_t* ready) {
   RETURN_CODE retCode;
   uint32_t count = 0;
-  FILE_LOG(logDEBUG4) << "STARTING RX THREAD";
+  LOG(plog::verbose) << "STARTING RX THREAD";
 
   mu.lock();
   *ready = 1;
@@ -348,7 +348,7 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
       if (retCode == ApiWaitTimeout) {
         continue;
       } else if (retCode == ApiSuccess) {
-        FILE_LOG(logDEBUG4) << "GOT BUFFER " << count++;
+        LOG(plog::verbose) << "GOT BUFFER " << count++;
         break;
       } else {
         printError(retCode, __FILE__, __LINE__);
@@ -364,22 +364,22 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
                        ch1WorkBuff->data(),
                        ch2WorkBuff->data()
                      );
-      FILE_LOG(logDEBUG4) << "Full Attempting to write to socket, full: " << full;
+      LOG(plog::verbose) << "Full Attempting to write to socket, full: " << full;
       if (full) {
         ssize_t status;
-        FILE_LOG(logDEBUG4) << "Work buff size: " << ch1WorkBuff->size();
+        LOG(plog::verbose) << "Work buff size: " << ch1WorkBuff->size();
         size_t buf_size = ch1WorkBuff->size() * sizeof(float);
         size_t buf_size_rem = buf_size;
         size_t sock_send_size, buf_size_sent = 0;
         do {
           sock_send_size = std::min(buf_size_rem,socketbuffsize);
           char* msg_size = reinterpret_cast<char *>(&sock_send_size);
-          FILE_LOG(logDEBUG4) << "Sending thru socket: " << sock_send_size;
+          LOG(plog::verbose) << "Sending thru socket: " << sock_send_size;
           if (sockets[0] != -1) {
             status = send(sockets[0], msg_size, sizeof(size_t), 0);
-            FILE_LOG(logDEBUG4) << "Tried to send thru socket: " << sock_send_size;
+            LOG(plog::verbose) << "Tried to send thru socket: " << sock_send_size;
             if (status != sizeof(size_t)) {
-              FILE_LOG(logERROR) << "Error writing msg_size to socket,"
+              LOG(plog::error) << "Error writing msg_size to socket,"
               #ifdef _WIN32
                                  << " received error: " << WSAGetLastError();
               #else
@@ -389,7 +389,7 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
             }
             status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff->data()+buf_size_sent), sock_send_size, 0);
             if (status < 0 || (size_t)status != sock_send_size) {
-              FILE_LOG(logERROR) << "Error writing ch1 buffer to socket. "
+              LOG(plog::error) << "Error writing ch1 buffer to socket. "
                                  << "Tried to write " << buf_size << " bytes,"
                                  << "Actually wrote " << status << " bytes.";
               return -1;
@@ -398,7 +398,7 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
           if (sockets[1] != -1) {
             status = send(sockets[1], msg_size, sizeof(size_t), 0);
             if (status != sizeof(size_t)) {
-              FILE_LOG(logERROR) << "Error writing msg_size to socket,"
+              LOG(plog::error) << "Error writing msg_size to socket,"
               #ifdef _WIN32
                                  << " received error: " << WSAGetLastError();
               #else
@@ -408,7 +408,7 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
             }
             status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff->data()+buf_size_sent), sock_send_size, 0);
             if (status < 0 || (size_t)status != sock_send_size) {
-              FILE_LOG(logERROR) << "Error writing ch2 buffer to socket. "
+              LOG(plog::error) << "Error writing ch2 buffer to socket. "
                                  << "Tried to write " << buf_size << " bytes,"
                                  << "Actually wrote " << status << " bytes.";
               return -1;
@@ -416,14 +416,14 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
           }
           buf_size_rem = buf_size_rem - sock_send_size;
           buf_size_sent = (buf_size-buf_size_rem)/sizeof(float);
-          FILE_LOG(logDEBUG4) << "Buff size remaining: " << buf_size_rem;
-          FILE_LOG(logDEBUG4) << "Buff size sent: " << buf_size_sent;
+          LOG(plog::verbose) << "Buff size remaining: " << buf_size_rem;
+          LOG(plog::verbose) << "Buff size sent: " << buf_size_sent;
         } while(buf_size_rem > 0);
       }
       // repost the buffer if we are not done
       if (bufferCounter < static_cast<int32_t>(nbrBuffers)) {
         if (postBuffer(buff) < 0) {
-          FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex
+          LOG(plog::error) << "COULD NOT POST API BUFFER " << std::hex
           << (uint64_t)(buff.get());
           return -1;
         }
@@ -448,7 +448,7 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
 
 int32_t AlazarATS9870::rxThreadRun(void) {
   if (threadRunning) {
-    FILE_LOG(logERROR) << "RX THREAD ALREADY RUNNING ";
+    LOG(plog::error) << "RX THREAD ALREADY RUNNING ";
     return -1;
   }
 
@@ -482,21 +482,21 @@ int32_t AlazarATS9870::rxThreadRun(void) {
   rxThread = std::thread(&AlazarATS9870::rx, this, &ready);
   threadRunning = true;
   while (ready != 1) {
-    FILE_LOG(logINFO) << "Waiting for Alazar to begin acq";
+    LOG(plog::info) << "Waiting for Alazar to begin acq";
     std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
   }
-  FILE_LOG(logINFO) << "Alazar ready to acq";
+  LOG(plog::info) << "Alazar ready to acq";
   return 0;
 }
 
 void AlazarATS9870::rxThreadStop(void) {
-  FILE_LOG(logDEBUG4) << "STOPPING RX THREAD " << rxThread.get_id();
+  LOG(plog::verbose) << "STOPPING RX THREAD " << rxThread.get_id();
   if (threadRunning) {
     threadStop = true;
     try {
       rxThread.join();
     } catch (std::exception &e) {
-      FILE_LOG(logERROR) << "Error occured: " << e.what();
+      LOG(plog::error) << "Error occured: " << e.what();
     }
     threadRunning = false;
 
@@ -533,7 +533,7 @@ int32_t AlazarATS9870::postBuffer(shared_ptr<std::vector<uint8_t>> buff) {
     printError(retCode, __FILE__, __LINE__);
     return (-1);
   } else {
-    FILE_LOG(logDEBUG4) << "POSTED BUFFER " << std::hex
+    LOG(plog::verbose) << "POSTED BUFFER " << std::hex
                         << (uint64_t)(buff.get());
   }
 
@@ -544,7 +544,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
 
   // need to fit at least one record in a buffer
   if (recordLength * numChannels > MAX_BUFFER_SIZE) {
-    FILE_LOG(logERROR) << "SINGLE RECORD TOO LARGE FOR THE BUFFER";
+    LOG(plog::error) << "SINGLE RECORD TOO LARGE FOR THE BUFFER";
     return (-1);
   }
 
@@ -566,7 +566,7 @@ int32_t AlazarATS9870::getBufferSize(void) {
         recordLength * nbrSegments * nbrWaveforms * *rr * numChannels;
     if (bufferSizeTest <= PREF_BUFFER_SIZE) {
       roundRobinsPerBuffer = *rr;
-      FILE_LOG(logINFO) << "roundRobinsPerBuffer: " << roundRobinsPerBuffer;
+      LOG(plog::info) << "roundRobinsPerBuffer: " << roundRobinsPerBuffer;
       break;
     }
   }
@@ -577,19 +577,19 @@ int32_t AlazarATS9870::getBufferSize(void) {
     // compute the buffer size
     bufferLen = recordLength * nbrSegments * nbrWaveforms *
                 roundRobinsPerBuffer * numChannels;
-    FILE_LOG(logINFO) << "bufferLen: " << bufferLen;
+    LOG(plog::info) << "bufferLen: " << bufferLen;
 
     nbrBuffers = nbrRoundRobins / roundRobinsPerBuffer;
-    FILE_LOG(logINFO) << "nbrBuffers: " << nbrBuffers;
+    LOG(plog::info) << "nbrBuffers: " << nbrBuffers;
 
     recordsPerBuffer = nbrSegments * nbrWaveforms * roundRobinsPerBuffer;
-    FILE_LOG(logINFO) << "recordsPerBuffer: " << recordsPerBuffer;
+    LOG(plog::info) << "recordsPerBuffer: " << recordsPerBuffer;
 
     recordsPerAcquisition = recordsPerBuffer * nbrBuffers;
-    FILE_LOG(logINFO) << "recordsPerAcquisition: " << recordsPerAcquisition;
+    LOG(plog::info) << "recordsPerAcquisition: " << recordsPerAcquisition;
 
     partialBuffer = false;
-    FILE_LOG(logINFO) << "partialBuffer: " << partialBuffer;
+    LOG(plog::info) << "partialBuffer: " << partialBuffer;
 
     return (0);
   }
@@ -612,29 +612,29 @@ int32_t AlazarATS9870::getBufferSize(void) {
     uint32_t bufferSizeTest = recordLength * *rec * numChannels;
     if (bufferSizeTest <= PREF_BUFFER_SIZE) {
       recordsPerBuffer = *rec;
-      FILE_LOG(logINFO) << "recordsPerBuffer: " << recordsPerBuffer;
+      LOG(plog::info) << "recordsPerBuffer: " << recordsPerBuffer;
       break;
     }
   }
 
   bufferLen = recordLength * recordsPerBuffer * numChannels;
-  FILE_LOG(logINFO) << "bufferLen: " << bufferLen;
+  LOG(plog::info) << "bufferLen: " << bufferLen;
 
   recordsPerAcquisition = nbrSegments * nbrWaveforms * nbrRoundRobins;
-  FILE_LOG(logINFO) << "recordsPerAcquisition: " << recordsPerAcquisition;
+  LOG(plog::info) << "recordsPerAcquisition: " << recordsPerAcquisition;
 
   nbrBuffers = recordsPerAcquisition / recordsPerBuffer;
-  FILE_LOG(logINFO) << "nbrBuffers: " << nbrBuffers;
+  LOG(plog::info) << "nbrBuffers: " << nbrBuffers;
 
   partialBuffer = true;
-  FILE_LOG(logINFO) << "partialBuffer: " << partialBuffer;
+  LOG(plog::info) << "partialBuffer: " << partialBuffer;
 
   buffersPerRoundRobin = nbrBuffers / nbrRoundRobins;
-  FILE_LOG(logINFO) << "buffersPerRoundRobin: " << buffersPerRoundRobin;
+  LOG(plog::info) << "buffersPerRoundRobin: " << buffersPerRoundRobin;
 
   if (buffersPerRoundRobin * recordsPerBuffer * recordLength >
       MAX_BUFFER_SIZE) {
-    FILE_LOG(logERROR) << " Exeeded MAX_BUFFER_SIZE";
+    LOG(plog::error) << " Exeeded MAX_BUFFER_SIZE";
     return (-1);
   }
 
@@ -705,7 +705,7 @@ AlazarATS9870::processCompleteBuffer(std::shared_ptr<std::vector<uint8_t>> buffP
 int32_t AlazarATS9870::processPartialBuffer(
     std::shared_ptr<std::vector<uint8_t>> buffPtr, float *ch1, float *ch2) {
   uint32_t partialIndex = bufferCounter % buffersPerRoundRobin;
-  FILE_LOG(logDEBUG4) << "PARTIAL INDEX " << partialIndex;
+  LOG(plog::verbose) << "PARTIAL INDEX " << partialIndex;
 
   // the raw pointer makes the code more readable
   uint8_t *buff = static_cast<uint8_t *>(buffPtr.get()->data());
@@ -771,7 +771,7 @@ int32_t AlazarATS9870::processPartialBuffer(
 void AlazarATS9870::printError(RETURN_CODE code, std::string file,
                                int32_t line) {
 
-  FILE_LOG(logERROR) << "File: " << file << " Line: " << line
+  LOG(plog::error) << "File: " << file << " Line: " << line
                      << " ERROR: " << std::to_string(code) << " "
                      << AlazarErrorToText(code);
 }
@@ -783,14 +783,14 @@ int32_t AlazarATS9870::sysInfo() {
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
   } else {
-    FILE_LOG(logINFO) << "ATS SDK Rev " << to_string(major) << "."
+    LOG(plog::info) << "ATS SDK Rev " << to_string(major) << "."
                       << to_string(minor) << "." << to_string(rev);
   }
 
   // see how many boards are installed
   // todo - need to think aobout error handling here - create a info method
   uint32_t systemCount = AlazarNumOfSystems();
-  FILE_LOG(logINFO) << "System count    = " << to_string(systemCount);
+  LOG(plog::info) << "System count    = " << to_string(systemCount);
 
   if (systemCount > 0) {
     for (uint32_t systemId = 1; systemId <= systemCount; systemId++) {
@@ -813,19 +813,19 @@ int32_t AlazarATS9870::sysInfo() {
 int32_t AlazarATS9870::DisplaySystemInfo(uint32_t systemId) {
   uint32_t boardCount = AlazarBoardsInSystemBySystemID(systemId);
   if (boardCount == 0) {
-    FILE_LOG(logERROR) << "No boards found in system";
+    LOG(plog::error) << "No boards found in system";
     return -1;
   }
 
   HANDLE handle = AlazarGetSystemHandle(systemId);
   if (handle == NULL) {
-    FILE_LOG(logERROR) << "AlazarGetSystemHandle system failed";
+    LOG(plog::error) << "AlazarGetSystemHandle system failed";
     return -1;
   }
 
   uint32_t boardType = AlazarGetBoardKind(handle);
   if (boardType == ATS_NONE || boardType >= ATS_LAST) {
-    FILE_LOG(logERROR) << "Unknown board type " << boardType;
+    LOG(plog::error) << "Unknown board type " << boardType;
     return -1;
   }
 
@@ -833,15 +833,15 @@ int32_t AlazarATS9870::DisplaySystemInfo(uint32_t systemId) {
   RETURN_CODE retCode =
       AlazarGetDriverVersion(&driverMajor, &driverMinor, &driverRev);
   if (retCode != ApiSuccess) {
-    FILE_LOG(logERROR) << "AlazarGetDriverVersion failed "
+    LOG(plog::error) << "AlazarGetDriverVersion failed "
                        << AlazarErrorToText(retCode);
     return -1;
   }
 
-  FILE_LOG(logINFO) << "System ID       = " << systemId;
-  FILE_LOG(logINFO) << "Board type      = " << BoardTypeToText(boardType);
-  FILE_LOG(logINFO) << "Board count     = " << boardCount;
-  FILE_LOG(logINFO) << "Driver version  = " << to_string(driverMajor) << "."
+  LOG(plog::info) << "System ID       = " << systemId;
+  LOG(plog::info) << "Board type      = " << BoardTypeToText(boardType);
+  LOG(plog::info) << "Board count     = " << boardCount;
+  LOG(plog::info) << "Driver version  = " << to_string(driverMajor) << "."
                     << to_string(driverMinor) << "." << to_string(driverRev);
 
   // Display informataion about each board in this board system
@@ -867,7 +867,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
 
   HANDLE handle = AlazarGetBoardBySystemID(systemId, boardId);
   if (handle == NULL) {
-    FILE_LOG(logERROR) << "Open systemId " << systemId << " boardId " << boardId
+    LOG(plog::error) << "Open systemId " << systemId << " boardId " << boardId
                        << " failed";
     return -1;
   }
@@ -876,7 +876,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
   BYTE bitsPerSample;
   retCode = AlazarGetChannelInfo(handle, &samplesPerChannel, &bitsPerSample);
   if (retCode != ApiSuccess) {
-    FILE_LOG(logERROR) << "AlazarGetChannelInfo failed -- "
+    LOG(plog::error) << "AlazarGetChannelInfo failed -- "
                        << AlazarErrorToText(retCode);
     return -1;
   }
@@ -884,7 +884,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
   uint32_t aspocType;
   retCode = AlazarQueryCapability(handle, ASOPC_TYPE, 0, &aspocType);
   if (retCode != ApiSuccess) {
-    FILE_LOG(logERROR) << "AlazarQueryCapability failed -- "
+    LOG(plog::error) << "AlazarQueryCapability failed -- "
                        << AlazarErrorToText(retCode);
     return -1;
   }
@@ -893,7 +893,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
   BYTE cpldMinor;
   retCode = AlazarGetCPLDVersion(handle, &cpldMajor, &cpldMinor);
   if (retCode != ApiSuccess) {
-    FILE_LOG(logERROR) << "AlazarGetCPLDVersion failed -- "
+    LOG(plog::error) << "AlazarGetCPLDVersion failed -- "
                        << AlazarErrorToText(retCode);
     return -1;
   }
@@ -901,7 +901,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
   uint32_t serialNumber;
   retCode = AlazarQueryCapability(handle, GET_SERIAL_NUMBER, 0, &serialNumber);
   if (retCode != ApiSuccess) {
-    FILE_LOG(logERROR) << "AlazarQueryCapability failed -- "
+    LOG(plog::error) << "AlazarQueryCapability failed -- "
                        << AlazarErrorToText(retCode);
     return -1;
   }
@@ -910,26 +910,26 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
   retCode =
       AlazarQueryCapability(handle, GET_LATEST_CAL_DATE, 0, &latestCalDate);
   if (retCode != ApiSuccess) {
-    FILE_LOG(logERROR) << "Error: AlazarQueryCapability failed -- "
+    LOG(plog::error) << "Error: AlazarQueryCapability failed -- "
                        << AlazarErrorToText(retCode);
     return -1;
   }
 
-  FILE_LOG(logINFO) << "System ID                 = " << systemId;
-  FILE_LOG(logINFO) << "Board ID                  = " << boardId;
-  FILE_LOG(logINFO) << "Serial number             = " << setw(6)
+  LOG(plog::info) << "System ID                 = " << systemId;
+  LOG(plog::info) << "Board ID                  = " << boardId;
+  LOG(plog::info) << "Serial number             = " << setw(6)
                     << serialNumber;
-  FILE_LOG(logINFO) << "Bits per sample           = "
+  LOG(plog::info) << "Bits per sample           = "
                     << to_string(bitsPerSample);
-  FILE_LOG(logINFO) << "Max samples per channel   = " << samplesPerChannel;
-  FILE_LOG(logINFO) << "CPLD version              = " << to_string(cpldMajor)
+  LOG(plog::info) << "Max samples per channel   = " << samplesPerChannel;
+  LOG(plog::info) << "CPLD version              = " << to_string(cpldMajor)
                     << "." << to_string(cpldMinor);
-  FILE_LOG(logINFO) << "FPGA version              = "
+  LOG(plog::info) << "FPGA version              = "
                     << ((aspocType >> 16) & 0xff) << "."
                     << ((aspocType >> 24) & 0xf);
-  FILE_LOG(logINFO) << "ASoPC signature           = " << setw(8) << hex
+  LOG(plog::info) << "ASoPC signature           = " << setw(8) << hex
                     << aspocType;
-  FILE_LOG(logINFO) << "Latest calibration date   = " << latestCalDate;
+  LOG(plog::info) << "Latest calibration date   = " << latestCalDate;
 
   if (IsPcieDevice(handle)) {
     // Display PCI Express link information
@@ -937,7 +937,7 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
     uint32_t linkSpeed;
     retCode = AlazarQueryCapability(handle, GET_PCIE_LINK_SPEED, 0, &linkSpeed);
     if (retCode != ApiSuccess) {
-      FILE_LOG(logERROR) << "AlazarQueryCapability failed -- "
+      LOG(plog::error) << "AlazarQueryCapability failed -- "
                          << AlazarErrorToText(retCode);
       return -1;
     }
@@ -945,14 +945,14 @@ int32_t AlazarATS9870::DisplayBoardInfo(uint32_t systemId, uint32_t boardId) {
     uint32_t linkWidth;
     retCode = AlazarQueryCapability(handle, GET_PCIE_LINK_WIDTH, 0, &linkWidth);
     if (retCode != ApiSuccess) {
-      FILE_LOG(logERROR) << "Error: AlazarQueryCapability failed -- "
+      LOG(plog::error) << "Error: AlazarQueryCapability failed -- "
                          << AlazarErrorToText(retCode);
       return -1;
     }
 
-    FILE_LOG(logINFO) << "PCIe link speed           = " << 2.5 * linkSpeed
+    LOG(plog::info) << "PCIe link speed           = " << 2.5 * linkSpeed
                       << " Gbps";
-    FILE_LOG(logINFO) << "PCIe link width           = " << linkWidth
+    LOG(plog::info) << "PCIe link width           = " << linkWidth
                       << " lanes";
   }
 
@@ -994,7 +994,7 @@ bool AlazarATS9870::IsPcieDevice(HANDLE handle) {
 int32_t AlazarATS9870::FlashLed(HANDLE handle, int32_t cycleCount,
                                 uint32_t cyclePeriod_ms) {
   for (int cycle = 0; cycle < cycleCount; cycle++) {
-    FILE_LOG(logDEBUG3) << "Flashing LED...";
+    LOG(plog::verbose) << "Flashing LED...";
 
     const int phaseCount = 2;
     uint32_t sleepPeriod_ms = cyclePeriod_ms / phaseCount;
