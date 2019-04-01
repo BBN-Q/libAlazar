@@ -37,28 +37,41 @@ AlazarATS9870 boards[MAX_NUM_BOARDS];
 extern "C" {
 #endif
 
-#ifndef FILE_LOG_LEVEL
-#define FILE_LOG_LEVEL 4
+#ifndef FILE_LOG
+#define FILE_LOG 1
 #endif
-#ifndef CONSOLE_LOG_LEVEL
-#define CONSOLE_LOG_LEVEL 3
+#ifndef CONSOLE_LOG
+#define CONSOLE_LOG 2
 #endif
+
+class LoggerStartup {
+public:
+  LoggerStartup();    
+};
+
+LoggerStartup::LoggerStartup() {
+    //TODO: change log file path
+  if (!plog::get()) {
+    static plog::RollingFileAppender<plog::TxtFormatter> fileAppender("libalazar.log", 1000000, 3);
+    plog::init<FILE_LOG>(plog::info, &fileAppender);
+    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+    plog::init<CONSOLE_LOG>(plog::warning, &consoleAppender);
+    plog::init(plog::verbose).addAppender(plog::get<FILE_LOG>()).addAppender(plog::get<CONSOLE_LOG>());
+  }
+
+  //make sure it was created correctly
+  if (!plog::get()){
+    std::cout << "Was unable to create a logger for libalazar! Exiting..." << std::endl;
+    throw (-1); 
+  }
+
+  LOG(plog::info) << "libAlazar driver version: " << std::string(VERSION);
+}
+
+static LoggerStartup _loggerstartup;
 
 int32_t connectBoard(uint32_t boardId, const char *logFile) {
-  if (!plog::get()) {
-    if (logFile) {
-      static plog::RollingFileAppender<plog::TxtFormatter> fileAppender(logFile, 1000000, 3);
-      plog::init<1>(static_cast<plog::Severity>(FILE_LOG_LEVEL), &fileAppender);
-    }
-    else {
-      static plog::RollingFileAppender<plog::TxtFormatter> fileAppender("alazar.log", 1000000, 3);
-      plog::init<1>(static_cast<plog::Severity>(FILE_LOG_LEVEL), &fileAppender);
-    }
-    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
-    plog::init<2>(static_cast<plog::Severity>(CONSOLE_LOG_LEVEL), &consoleAppender);
-
-    plog::init(plog::verbose).addAppender(plog::get<1>()).addAppender(plog::get<2>());
-  }
+  std::cout << "In connect board for board " << static_cast<int>(boardId) << std::endl;
 
   if (boardId > 0 && boardId <= MAX_NUM_BOARDS) {
     AlazarATS9870 &board = boards[boardId - 1];
@@ -67,8 +80,6 @@ int32_t connectBoard(uint32_t boardId, const char *logFile) {
     LOG(plog::error) << "Invalid board address " << boardId;
     return (-1);
   }
-
-  LOG(plog::info) << "libAlazar Rev " << std::string(VERSION);
 
   return (0);
 }
