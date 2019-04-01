@@ -7,7 +7,7 @@
 #include "optionparser.h"
 
 #include "libAlazarAPI.h"
-#include "logger.h"
+#include <plog/Log.h>
 
 void waitForQuit(void) {
   std::string line;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
   // Logging level
-  // TLogLevel logLevel = logINFO;
+  // TLogLevel logLevel = plog::info;
   // if (options[LOGGING_LEVEL]) {
   //   logLevel = TLogLevel(atoi(options[LOGGING_LEVEL].arg));
   // }

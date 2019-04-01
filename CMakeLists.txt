@@ -25,13 +25,20 @@ set(ALAZAR_VERSION_MINOR ${CMAKE_MATCH_2})
 set(ALAZAR_VERSION_PATCH 0)
 set(ALAZAR_VERSION_STRING ${ALAZAR_VERSION_MAJOR}.${ALAZAR_VERSION_MINOR}.${ALAZAR_VERSION_PATCH})
 
-#log levels: ERROR=0, WARNING=1, INFO=2, DEBUG=3, DEBUG1=4, DEBUG2=5, DEBUG3=6, DEBUG4=7
-#NOTE: these need to match TLogLevel in logger.h
-if( NOT LOG_LEVEL)
-	set(LOG_LEVEL 2)
+# log levels are: none = 0, fatal = 1, error = 2, warning = 3, info = 4, debug = 5, verbose = 6
+if( NOT FILE_LOG_LEVEL)
+	set(FILE_LOG_LEVEL 4)
+endif()
+if( NOT CONSOLE_LOG_LEVEL)
+	set(CONSOLE_LOG_LEVEL 3)
 endif()
 
-add_definitions(-DLOG_LEVEL=${LOG_LEVEL})
+
+include_directories(deps/plog/include)
+
+add_definitions(-DFILE_LOG_LEVEL=${FILE_LOG_LEVEL})
+add_definitions(-DCONSOLE_LOG_LEVEL=${CONSOLE_LOG_LEVEL})
+
 
 add_subdirectory(src/lib)
 add_subdirectory(src/matlab)

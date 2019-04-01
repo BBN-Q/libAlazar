@@ -56,6 +56,7 @@ typedef struct AcquisitionParams {
   uint32_t numberAcquisitions;
 } AcquisitionParams_t;
 
+
 APIEXPORT int32_t connectBoard(uint32_t boardID, const char *);
 APIEXPORT int32_t disconnect(uint32_t boardID);
 APIEXPORT int32_t setAll(uint32_t boardId, const ConfigData_t *config,
@@ -74,3 +75,4 @@ APIEXPORT int32_t unregister_sockets(uint32_t boardID);
 #endif
 
 #endif
+

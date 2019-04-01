@@ -24,7 +24,8 @@ limitations under the License.
 #include <time.h>
 
 #include "libAlazar.h"
-#include "logger.h"
+#include <plog/Log.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
 #include "version.h"
 
 using namespace std;
@@ -36,23 +37,49 @@ AlazarATS9870 boards[MAX_NUM_BOARDS];
 extern "C" {
 #endif
 
+#ifndef FILE_LOG
+#define FILE_LOG 1
+#endif
+#ifndef CONSOLE_LOG
+#define CONSOLE_LOG 2
+#endif
+
+class LoggerStartup {
+public:
+  LoggerStartup();    
+};
+
+LoggerStartup::LoggerStartup() {
+    //TODO: change log file path
+  if (!plog::get()) {
+    static plog::RollingFileAppender<plog::TxtFormatter> fileAppender("libalazar.log", 1000000, 3);
+    plog::init<FILE_LOG>(plog::info, &fileAppender);
+    static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+    plog::init<CONSOLE_LOG>(plog::warning, &consoleAppender);
+    plog::init(plog::verbose).addAppender(plog::get<FILE_LOG>()).addAppender(plog::get<CONSOLE_LOG>());
+  }
+
+  //make sure it was created correctly
+  if (!plog::get()){
+    std::cout << "Was unable to create a logger for libalazar! Exiting..." << std::endl;
+    throw (-1); 
+  }
+
+  LOG(plog::info) << "libAlazar driver version: " << std::string(VERSION);
+}
+
+static LoggerStartup _loggerstartup;
+
 int32_t connectBoard(uint32_t boardId, const char *logFile) {
-  FILE *pFile = stdout;
+  std::cout << "In connect board for board " << static_cast<int>(boardId) << std::endl;
 
   if (boardId > 0 && boardId <= MAX_NUM_BOARDS) {
     AlazarATS9870 &board = boards[boardId - 1];
     board.sysInfo();
   } else {
-    FILE_LOG(logERROR) << "Invalid board address " << boardId;
+    LOG(plog::error) << "Invalid board address " << boardId;
     return (-1);
   }
-
-  if (logFile) {
-    pFile = fopen(logFile, "w");
-  }
-
-  Output2FILE::Stream() = pFile;
-  FILE_LOG(logINFO) << "libAlazar Rev " << std::string(VERSION);
 
   return (0);
 }
@@ -62,7 +89,7 @@ int32_t setAll(uint32_t boardId, const ConfigData_t *config,
   AlazarATS9870 &board = boards[boardId - 1];
 
   if (config == nullptr || acqParams == nullptr) {
-    FILE_LOG(logERROR) << "COULD NOT SET CONFIGURATION ";
+    LOG(plog::error) << "COULD NOT SET CONFIGURATION ";
     return (-1);
   }
 
@@ -92,17 +119,17 @@ int32_t wait_for_acquisition(uint32_t boardId, float *ch1, float *ch2) {
   AlazarATS9870 &board = boards[boardId - 1];
 
   if (board.sockets[0] != -1 || board.sockets[1] != -1) {
-      FILE_LOG(logERROR) << "wait_for_acquisition should not be used with the socket API.";
+      LOG(plog::error) << "wait_for_acquisition should not be used with the socket API.";
       return -1;
   }
 
   if (ch1 == NULL) {
-    FILE_LOG(logERROR) << "NULL Pointer to Ch1";
+    LOG(plog::error) << "NULL Pointer to Ch1";
     return (-1);
   }
 
   if (ch2 == NULL) {
-    FILE_LOG(logERROR) << "NULL Pointer to Ch2";
+    LOG(plog::error) << "NULL Pointer to Ch2";
     return (-1);
   }
 
@@ -112,7 +139,7 @@ int32_t wait_for_acquisition(uint32_t boardId, float *ch1, float *ch2) {
     return 0;
   }
 
-  FILE_LOG(logDEBUG4) << "API POPPING DATA " << std::hex
+  LOG(plog::verbose) << "API POPPING DATA " << std::hex
                       << (uint64_t)(buff.get());
 
   // if there are multiple buffers per roundrobin the partial index logic
@@ -121,10 +148,10 @@ int32_t wait_for_acquisition(uint32_t boardId, float *ch1, float *ch2) {
   int32_t ret = board.processBuffer(buff, ch1, ch2);
 
   if (board.postBuffer(buff) >= 0) {
-    FILE_LOG(logDEBUG4) << "API POSTED BUFFER " << std::hex
+    LOG(plog::verbose) << "API POSTED BUFFER " << std::hex
                         << (uint64_t)(buff.get());
   } else {
-    FILE_LOG(logERROR) << "COULD NOT POST API BUFFER " << std::hex
+    LOG(plog::error) << "COULD NOT POST API BUFFER " << std::hex
                        << (uint64_t)(buff.get());
     return (-1);
   }
@@ -159,14 +186,14 @@ int32_t force_trigger(uint32_t boardId)
 }
 int32_t flashLED(uint32_t boardId)
 {
-  FILE_LOG(logDEBUG4) << "Flashing LED ... ";
+  LOG(plog::verbose) << "Flashing LED ... ";
   return 0;
 }
 
 int32_t register_socket(uint32_t boardId, uint32_t channel, int32_t socket) {
     AlazarATS9870 &board = boards[boardId - 1];
     if (channel >= board.numChannels) {
-        FILE_LOG(logERROR) << "Invalid channel";
+        LOG(plog::error) << "Invalid channel";
         return -1;
     }
     board.sockets[channel] = socket;
