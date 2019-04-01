@@ -41,8 +41,8 @@ std::mutex mu;
 
 #include "libAlazar.h"
 #include "libAlazarAPI.h"
-#include "logger.h"
-  
+#include <plog/Log.h>
+
 using namespace std;
 
 AlazarATS9870::AlazarATS9870() : threadStop(false), threadRunning(false) {
@@ -51,6 +51,11 @@ AlazarATS9870::AlazarATS9870() : threadStop(false), threadRunning(false) {
 
 AlazarATS9870::~AlazarATS9870() {
   LOG(plog::verbose) << "Destructing ...";
+
+  assert(ch1WorkBuff != NULL);
+  delete ch1WorkBuff;
+  assert(ch2WorkBuff != NULL);
+  delete ch2WorkBuff;
 
   RETURN_CODE retCode = AlazarCloseAUTODma(boardHandle);
   if (retCode != ApiSuccess) {
@@ -314,6 +319,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     getsockopt(fdsocket,SOL_SOCKET,SO_RCVBUF,(void *)&socketbuffsize, &m);
     size_t num_floats = socketbuffsize/sizeof(float);
     socketbuffsize = (num_floats-1)*sizeof(float);
+    close(fdsocket);
   #endif
     LOG(plog::info) << "num floats per send: " << num_floats;
     LOG(plog::info) << "socket buffer size: " << socketbuffsize;
