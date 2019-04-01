@@ -52,11 +52,6 @@ AlazarATS9870::AlazarATS9870() : threadStop(false), threadRunning(false) {
 AlazarATS9870::~AlazarATS9870() {
   LOG(plog::verbose) << "Destructing ...";
 
-  assert(ch1WorkBuff != NULL);
-  delete ch1WorkBuff;
-  assert(ch2WorkBuff != NULL);
-  delete ch2WorkBuff;
-
   RETURN_CODE retCode = AlazarCloseAUTODma(boardHandle);
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
