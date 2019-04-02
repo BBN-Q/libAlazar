@@ -20,6 +20,25 @@ from ctypes import *
 from ctypes.util import find_library
 import numpy.ctypeslib as npct
 import numpy as np
+from enum import IntEnum
+
+#ctypes compatible Enum class to set logger severity according to plog values
+#https://www.chriskrycho.com/2015/ctypes-structures-and-dll-exports.html
+class PlogSeverity(IntEnum):
+    none = 0
+    fatal = 1
+    error = 2
+    warning = 3
+    info = 4
+    debug = 5
+    verbose = 6
+
+    def __init__(self, value):
+        self._as_parameter = int(value)
+
+    @classmethod
+    def from_param(cls, obj):
+        return int(obj)
 
 # load the shared library
 # try with and without "lib" prefix
@@ -60,7 +79,7 @@ class AcquisitionParams(Structure):
                 ("numberAcquisitions",     c_uint32)]
 
 _connectBoard = lib.connectBoard
-_connectBoard.argtypes = [c_uint32,c_char_p]
+_connectBoard.argtypes = [c_uint32,PlogSeverity,PlogSeverity]
 _connectBoard.restype = c_int32
 
 _setAll = lib.setAll
@@ -95,6 +114,14 @@ _unregister_sockets = lib.unregister_sockets
 _unregister_sockets.argtypes = [c_uint32]
 _unregister_sockets.restype = c_int32
 
+_set_file_log_severity= lib.set_file_log_severity
+_set_file_log_severity.argtypes = [PlogSeverity]
+_set_file_log_severity.restyupe = c_int32
+
+_set_console_log_severity= lib.set_console_log_severity
+_set_console_log_severity.argtypes = [PlogSeverity]
+_set_console_log_severity.restyupe = c_int32
+
 class AlazarError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -103,9 +130,19 @@ class AlazarError(Exception):
     def __str__(self):
         return self.msg
 
+def set_console_log_severity(severity):
+    if not isinstance(severity, PlogSeverity):
+        raise AlazarError(f"Unknown severity {severity}.")
+    assert _set_console_log_severity(severity) == 0
+
+def set_file_log_severity(severity):
+    if not isinstance(severity, PlogSeverity):
+        raise AlazarError(f"Unknown severity {severity}.")
+    assert _set_file_log_severity(severity) == 0
+
 class ATS9870():
 
-    def __init__(self,logFile='alazar.log',bufferType='raw'):
+    def __init__(self,bufferType='raw'):
 
         self.addr = None
 
@@ -130,14 +167,13 @@ class ATS9870():
             'verticalScale':1.0,
         }
 
-        self.logFile = logFile
         self.bufferType = bufferType
 
     def connect(self, name):
         self.name = name.split('/')[0]
         self.addr = np.uint32(name.split('/')[1])
 
-        retVal = _connectBoard(self.addr,self.logFile.encode('ascii'));
+        retVal = _connectBoard(self.addr);
         if retVal < 0:
             raise AlazarError('ERROR %s: connectBoard failed'%self.name)
         return retVal

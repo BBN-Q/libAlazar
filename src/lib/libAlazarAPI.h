@@ -57,7 +57,7 @@ typedef struct AcquisitionParams {
 } AcquisitionParams_t;
 
 
-APIEXPORT int32_t connectBoard(uint32_t boardID, const char *);
+APIEXPORT int32_t connectBoard(uint32_t boardID);
 APIEXPORT int32_t disconnect(uint32_t boardID);
 APIEXPORT int32_t setAll(uint32_t boardId, const ConfigData_t *config,
                       AcquisitionParams_t *acqParams);
@@ -70,9 +70,11 @@ APIEXPORT int32_t force_trigger( uint32_t boardID );
 APIEXPORT int32_t register_socket(uint32_t boardID, uint32_t channel, int32_t socket);
 APIEXPORT int32_t unregister_sockets(uint32_t boardID);
 
+APIEXPORT int32_t set_console_log_severity(plog::Severity);
+APIEXPORT int32_t set_file_log_severity(plog::Severity);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

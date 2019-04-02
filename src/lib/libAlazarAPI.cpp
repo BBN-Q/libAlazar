@@ -46,7 +46,7 @@ extern "C" {
 
 class LoggerStartup {
 public:
-  LoggerStartup();    
+  LoggerStartup();
 };
 
 LoggerStartup::LoggerStartup() {
@@ -62,7 +62,7 @@ LoggerStartup::LoggerStartup() {
   //make sure it was created correctly
   if (!plog::get()){
     std::cout << "Was unable to create a logger for libalazar! Exiting..." << std::endl;
-    throw (-1); 
+    throw (-1);
   }
 
   LOG(plog::info) << "libAlazar driver version: " << std::string(VERSION);
@@ -70,8 +70,7 @@ LoggerStartup::LoggerStartup() {
 
 static LoggerStartup _loggerstartup;
 
-int32_t connectBoard(uint32_t boardId, const char *logFile) {
-  std::cout << "In connect board for board " << static_cast<int>(boardId) << std::endl;
+int32_t connectBoard(uint32_t boardId) {
 
   if (boardId > 0 && boardId <= MAX_NUM_BOARDS) {
     AlazarATS9870 &board = boards[boardId - 1];
@@ -82,6 +81,16 @@ int32_t connectBoard(uint32_t boardId, const char *logFile) {
   }
 
   return (0);
+}
+
+int32_t set_file_log_severity(plog::Severity fileSv) {
+  plog::get<FILE_LOG>()->setMaxSeverity(fileSv);
+  return 0;
+}
+
+int32_t set_console_log_severity(plog::Severity consoleSv) {
+  plog::get<FILE_LOG>()->setMaxSeverity(consoleSv);
+  return 0;
 }
 
 int32_t setAll(uint32_t boardId, const ConfigData_t *config,
