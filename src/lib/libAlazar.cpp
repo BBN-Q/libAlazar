@@ -302,8 +302,8 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   LOG(plog::info) << "samplesPerAcquisition: " << samplesPerAcquisition;
   LOG(plog::info) << "numberAcquisitions: " << acqParams.numberAcquisitions;
 
-  ch1WorkBuff = new std::vector<float>(samplesPerAcquisition);
-  ch2WorkBuff = new std::vector<float>(samplesPerAcquisition);
+  ch1WorkBuff.resize(samplesPerAcquisition);
+  ch2WorkBuff.resize(samplesPerAcquisition);
 
   uint32_t m = sizeof(socketbuffsize);
   #ifdef _WIN32
@@ -362,14 +362,14 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
     if (sockets[0] != -1 || sockets[1] != -1) {
       int32_t full = processBuffer(
                        buff,
-                       ch1WorkBuff->data(),
-                       ch2WorkBuff->data()
+                       ch1WorkBuff.data(),
+                       ch2WorkBuff.data()
                      );
       LOG(plog::verbose) << "Full Attempting to write to socket, full: " << full;
       if (full) {
         ssize_t status;
-        LOG(plog::verbose) << "Work buff size: " << ch1WorkBuff->size();
-        size_t buf_size = ch1WorkBuff->size() * sizeof(float);
+        LOG(plog::verbose) << "Work buff size: " << ch1WorkBuff.size();
+        size_t buf_size = ch1WorkBuff.size() * sizeof(float);
         size_t buf_size_rem = buf_size;
         size_t sock_send_size, buf_size_sent = 0;
         do {
@@ -388,7 +388,7 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
               #endif
               return -1;
             }
-            status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff->data()+buf_size_sent), sock_send_size, 0);
+            status = send(sockets[0], reinterpret_cast<char *>(ch1WorkBuff.data()+buf_size_sent), sock_send_size, 0);
             if (status < 0 || (size_t)status != sock_send_size) {
               LOG(plog::error) << "Error writing ch1 buffer to socket. "
                                  << "Tried to write " << buf_size << " bytes,"
@@ -407,7 +407,7 @@ int32_t AlazarATS9870::rx(int32_t* ready) {
               #endif
               return -1;
             }
-            status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff->data()+buf_size_sent), sock_send_size, 0);
+            status = send(sockets[1], reinterpret_cast<char *>(ch2WorkBuff.data()+buf_size_sent), sock_send_size, 0);
             if (status < 0 || (size_t)status != sock_send_size) {
               LOG(plog::error) << "Error writing ch2 buffer to socket. "
                                  << "Tried to write " << buf_size << " bytes,"
@@ -712,8 +712,8 @@ int32_t AlazarATS9870::processPartialBuffer(
   uint8_t *buff = static_cast<uint8_t *>(buffPtr.get()->data());
 
   if (averager) {
-     float *pCh1Work =  ch1WorkBuff->data();
-     float *pCh2Work =  ch2WorkBuff->data();
+     float *pCh1Work =  ch1WorkBuff.data();
+     float *pCh2Work =  ch2WorkBuff.data();
 
     // process the buff into the work buffer and if it is the last buffer
     // in the round robin, run the averager

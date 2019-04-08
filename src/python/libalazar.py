@@ -277,6 +277,8 @@ class ATS9870():
 
         self.configureBoard()
 
+    # from memory_profiler import profile
+    # @profile
     def configureBoard(self):
         self.configData = ConfigData()
         fieldNames = [ name for name, ftype in ConfigData._fields_]
@@ -296,12 +298,19 @@ class ATS9870():
         self.numberAcquisitions     = self.acquisitionParams.numberAcquisitions
         self.samplesPerAcquisition = self.acquisitionParams.samplesPerAcquisition
 
-        self.ch1Buffer   = np.zeros(self.samplesPerAcquisition,dtype=np.float32)
-        self.ch1Buffer_p = self.ch1Buffer.ctypes.data_as(POINTER(c_float))
+        if not hasattr(self, 'ch1Buffer'):
+            self.ch1Buffer = np.empty(self.samplesPerAcquisition,dtype=np.float32)
+        elif len(self.ch1Buffer) != self.samplesPerAcquisition:
+            self.ch1Buffer = np.empty(self.samplesPerAcquisition,dtype=np.float32)
+        if not hasattr(self, 'ch2Buffer'):
+            self.ch2Buffer = np.empty(self.samplesPerAcquisition,dtype=np.float32)
+        elif len(self.ch2Buffer) != self.samplesPerAcquisition:
+            self.ch2Buffer = np.empty(self.samplesPerAcquisition,dtype=np.float32)
 
-        self.ch2Buffer   = np.zeros(self.samplesPerAcquisition,dtype=np.float32)
+        self.ch1Buffer_p = self.ch1Buffer.ctypes.data_as(POINTER(c_float))
         self.ch2Buffer_p = self.ch2Buffer.ctypes.data_as(POINTER(c_float))
 
+    # @profile
     def acquire(self):
         self.configureBoard()
         retVal = _acquire(self.addr)

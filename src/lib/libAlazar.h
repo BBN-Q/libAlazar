@@ -72,8 +72,8 @@ public:
   // this working buffer is used for the partial buffer logic when a round
   // robin is distributed over multiple buffers
 
-  std::vector<float> *ch1WorkBuff;
-  std::vector<float> *ch2WorkBuff;
+  std::vector<float> ch1WorkBuff;
+  std::vector<float> ch2WorkBuff;
 
   bool averager;
 
