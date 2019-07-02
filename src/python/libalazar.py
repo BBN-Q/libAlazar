@@ -132,22 +132,24 @@ class ATS9870():
         return retVal
 
     def set_mode(self, acquireMode):
-        _SetMode(self.addr, acquireMode)
+        _SetMode(self.addr, acquireMode.encode())
     
     def set_sample_rate(self, samplingRate):
-        _SetSampleRate(self.addr, samplingRate)
+        _SetSampleRate(self.addr, int(samplingRate))
     
     def configure_vertical(self, verticalScale, verticalOffset, verticalCoupling):
-        _ConfigureVertical(self.addr, verticalScale, verticalOffset, verticalCoupling)
+        if verticalScale not in [0.04, 0.1, 0.2, 0.4, 1.0, 2.0, 4.0]:
+            raise ValueError("Vertical Scale must be one of 0.04, 0.1, 0.2, 0.4, 1.0, 2.0, 4.0 (volts)")
+        _ConfigureVertical(self.addr, verticalScale, verticalOffset, verticalCoupling.encode())
     
     def set_bandwidth(self, bandwidth):
-        _SetBandwidth(self.addr, bandwidth)
+        _SetBandwidth(self.addr, bandwidth.encode())
     
     def configure_trigger(self, triggerLevel, triggerSource, triggerSlope, triggerCoupling, delay):
-        _ConfigureTrigger(self.addr, triggerLevel, triggerSource, triggerSlope, triggerCoupling, delay)
+        _ConfigureTrigger(self.addr, triggerLevel, triggerSource.encode(), triggerSlope.encode(), triggerCoupling.encode(), delay)
     
     def configure_acquisition(self, recordLength, nbrSegments, nbrWaveforms, nbrRoundRobins):
-        self.acquisition_params = AcquisitionParams()
+        self.acquisitionParams = AcquisitionParams()
         _ConfigureAcquisition(self.addr, recordLength, nbrSegments,
             nbrWaveforms, nbrRoundRobins, byref(self.acquisitionParams))
         self.numberAcquisitions     = self.acquisitionParams.numberAcquisitions
