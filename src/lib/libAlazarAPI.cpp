@@ -78,19 +78,67 @@ const char * boardInfo(uint32_t boardID) {
   return boardInfo(1, boardID).data();
 }
 
-int32_t connectBoard(uint32_t boardId, const char *logFile) {
-  std::cout << "In connect board for board " << static_cast<int>(boardId) << std::endl;
+// int32_t connectBoard(uint32_t boardId) {
+//   if (boardId > 0 && boardId <= MAX_NUM_BOARDS) {
+//     AlazarATS9870 &board = boards[boardId - 1];
+//     board.sysInfo();
+//   } else {
+//     LOG(plog::error) << "Invalid board address " << boardId;
+//     return (-1);
+//   }
 
+//   return (0);
+// }
+
+int32_t Connect(uint32_t boardId) {
+  int32_t ret = 0;
   if (boardId > 0 && boardId <= MAX_NUM_BOARDS) {
     AlazarATS9870 &board = boards[boardId - 1];
     board.sysInfo();
+    ret = board.Connect(1, boardId);
   } else {
     LOG(plog::error) << "Invalid board address " << boardId;
     return (-1);
   }
-
-  return (0);
+  return ret;
 }
+int32_t SetMode(uint32_t boardId, const char *acquireMode) {
+  AlazarATS9870 &board = boards[boardId - 1];
+  int32_t ret = board.SetMode(acquireMode);
+  return ret;
+}
+int32_t SetSampleRate(uint32_t boardId, uint32_t samplingRate) {
+  AlazarATS9870 &board = boards[boardId - 1];
+  int32_t ret = board.SetSampleRate(samplingRate);
+  return ret;
+}
+int32_t ConfigureVertical(uint32_t boardId, float verticalScale, float verticalOffset,
+                                       const char *verticalCoupling) {
+  AlazarATS9870 &board = boards[boardId - 1];
+  int32_t ret = board.ConfigureVertical(verticalScale, verticalOffset, verticalCoupling);
+  return ret;
+}
+int32_t SetBandwidth(uint32_t boardId, const char *bandwidth) {
+  AlazarATS9870 &board = boards[boardId - 1];
+  int32_t ret = board.SetBandwidth(bandwidth);
+  return ret;
+}
+int32_t ConfigureTrigger(uint32_t boardId, float triggerLevel, const char *triggerSource,
+                         const char *triggerSlope, const char *triggerCoupling, float delay) {
+  AlazarATS9870 &board = boards[boardId - 1];
+  int32_t ret = board.ConfigureTrigger(triggerLevel, triggerSource, triggerSlope, triggerCoupling, delay);
+  return ret;
+}
+int32_t ConfigureAcquisition(uint32_t boardId, uint32_t recordLength, uint32_t nbrSegments, 
+                             uint32_t nbrWaveforms, uint32_t nbrRoundRobins,
+                             AcquisitionParams_t &acqParams) {
+  AlazarATS9870 &board = boards[boardId - 1];
+  int32_t ret = board.ConfigureAcquisition(recordLength, nbrSegments, 
+                             nbrWaveforms, nbrRoundRobins,
+                             acqParams);
+  return ret;
+}
+
 
 int32_t setAll(uint32_t boardId, const ConfigData_t *config,
                AcquisitionParams_t *acqParams) {

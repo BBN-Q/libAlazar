@@ -33,39 +33,41 @@ if libpath is None:
 else:
     lib = CDLL(libpath)
 
-class ConfigData(Structure):
-    _fields_ = [
-                ("acquireMode",     c_char_p),
-                ("bandwidth",       c_char_p),
-                ("clockType",       c_char_p),
-                ("delay",           c_double),
-                ("enabled",         c_bool),
-                ("label",           c_char_p),
-                ("recordLength",    c_uint32),
-                ("nbrSegments",     c_uint32),
-                ("nbrWaveforms",    c_uint32),
-                ("nbrRoundRobins",  c_uint32),
-                ("samplingRate",    c_double),
-                ("triggerCoupling", c_char_p),
-                ("triggerLevel",    c_double),
-                ("triggerSlope",    c_char_p),
-                ("triggerSource",   c_char_p),
-                ("verticalCoupling",c_char_p),
-                ("verticalOffset",  c_double),
-                ("verticalScale",   c_double),
-               ]
-
 class AcquisitionParams(Structure):
     _fields_ = [("samplesPerAcquisition", c_uint32),
                 ("numberAcquisitions",     c_uint32)]
 
-_connectBoard = lib.connectBoard
-_connectBoard.argtypes = [c_uint32,c_char_p]
-_connectBoard.restype = c_int32
-
 _setAll = lib.setAll
 _setAll.argtypes = [c_uint32,POINTER(ConfigData),POINTER(AcquisitionParams)]
 _setAll.restype = c_int32
+
+_Connect = lib.Connect
+_Connect.argtypes = [c_uint32]
+_Connect.restype = c_int32
+
+_SetMode = lib.SetMode
+_SetMode.argtypes = [c_uint32, c_char_p]
+_SetMode.restype = c_int32
+
+_SetSampleRate = lib.SetSampleRate
+_SetSampleRate.argtypes = [c_uint32, c_uint32]
+_SetSampleRate.restype = c_int32
+
+_ConfigureVertical = lib.ConfigureVertical
+_ConfigureVertical.argtypes = [c_uint32, c_float, c_float, c_char_p]
+_ConfigureVertical.restype = c_int32    
+                                       
+_SetBandwidth = lib.SetBandwidth
+_SetBandwidth.argtypes = [c_uint32, c_char_p]
+_SetBandwidth.restype = c_int32
+
+_ConfigureTrigger = lib.ConfigureTrigger
+_ConfigureTrigger.argtypes = [c_uint32, c_float, c_char_p, c_char_p, c_char_p, c_float]
+_ConfigureTrigger.restype = c_int32    
+                         
+_ConfigureAcquisition = lib.ConfigureAcquisition
+_ConfigureAcquisition.argtypes = [c_uint32, c_uint32, c_uint32, c_uint32, c_uint32, POINTER(AcquisitionParams)]
+_ConfigureAcquisition.restype = c_int32    
 
 _disconnect = lib.disconnect
 _disconnect.argtypes = [c_uint32]
@@ -117,195 +119,40 @@ class AlazarError(Exception):
 class ATS9870():
 
     def __init__(self,logFile='alazar.log',bufferType='raw'):
-
         self.addr = None
-
-        self.config={
-            'acquireMode':'averager',
-            'bandwidth':'Full',
-            'clockType':'ref',
-            'delay':0.0,
-            'enabled':True,
-            'label':'Alazar',
-            'recordLength':4096,
-            'nbrSegments':1,
-            'nbrWaveforms':1,
-            'nbrRoundRobins':1,
-            'samplingRate':500e6,
-            'triggerCoupling':'AC',
-            'triggerLevel':1000,
-            'triggerSlope':'rising',
-            'triggerSource':'Ext',
-            'verticalCoupling':'AC',
-            'verticalOffset':0.0,
-            'verticalScale':1.0,
-        }
-
         self.logFile = logFile
         self.bufferType = bufferType
 
     def connect(self, name):
         self.name = name.split('/')[0]
         self.addr = np.uint32(name.split('/')[1])
-
-        retVal = _connectBoard(self.addr,self.logFile.encode('ascii'));
+        retVal = _Connect(self.addr)   
         if retVal < 0:
             raise AlazarError('ERROR %s: connectBoard failed'%self.name)
         return retVal
 
-    #todo - anyway to automate creating the get/set methods?
-    def set_acqireMode(self,value):
-        self.writeConfig('acquireMode',value)
-    def get_acquireMode(self):
-        return self.readConfig('acquireMode')
-    acquireMode = property(get_acquireMode, set_acqireMode)
+    def connect():
+        _Connect(self.addr)
 
-    def set_bandwidth(self,value):
-        self.writeConfig('bandwidth',value)
-    def get_bandwidth(self):
-        return self.readConfig('bandwidth')
-    bandwidth = property(get_bandwidth, set_bandwidth)
-
-    def set_clockType(self,value):
-        self.writeConfig('clockType',value)
-    def get_clockType(self):
-        return self.readConfig('clockType')
-    clockType = property(get_clockType,set_clockType)
-
-    def set_delay(self,value):
-        self.writeConfig('delay',value)
-    def get_delay(self):
-        return self.readConfig('delay')
-    delay = property(get_delay, set_delay)
-
-    def set_enabled(self,value):
-        self.writeConfig('enabled',value)
-    def get_enabled(self):
-        return self.readConfig('enabled')
-    enabled = property(get_enabled, set_enabled)
-
-    def set_label(self,value):
-        self.writeConfig('label',value)
-    def get_label(self):
-        return self.readConfig('label')
-    label = property(get_label, set_label)
-
-    def set_recordLength(self,value):
-        self.writeConfig('recordLength',value)
-    def get_recordLength(self):
-        return self.readConfig('recordLength')
-    recordLength = property(get_recordLength, set_recordLength)
-
-    def set_nbrSegments(self,value):
-        self.writeConfig('nbrSegments',value)
-    def get_nbrSegments(self):
-        return self.readConfig('nbrSegments')
-    nbrSegments = property(get_nbrSegments, set_nbrSegments)
-
-    def set_nbrWaveforms(self,value):
-        self.writeConfig('nbrWaveforms',value)
-    def get_nbrWaveforms(self):
-        return self.readConfig('nbrWaveforms')
-    nbrWaveforms = property(get_nbrWaveforms, set_nbrWaveforms)
-
-    def set_nbrRoundRobins(self,value):
-        self.writeConfig('nbrRoundRobins',value)
-    def get_nbrRoundRobins(self):
-        return self.readConfig('nbrRoundRobins')
-    nbrRoundRobins = property(get_nbrRoundRobins, set_nbrRoundRobins)
-
-    def set_samplingRate(self,value):
-        self.writeConfig('samplingRate',value)
-    def get_samplingRate(self):
-        return self.readConfig('samplingRate')
-    samplingRate = property(get_samplingRate, set_samplingRate)
-
-    def set_triggerCoupling(self,value):
-        self.writeConfig('triggerCoupling',value)
-    def get_triggerCoupling(self):
-        return self.readConfig('triggerCoupling')
-    triggerCoupling = property(get_triggerCoupling, set_triggerCoupling)
-
-    def set_triggerLevel(self,value):
-        self.writeConfig('triggerLevel',value)
-    def get_triggerLevel(self):
-        return self.readConfig('triggerLevel')
-    triggerLevel = property(get_triggerLevel, set_triggerLevel)
-
-    def set_triggerSlope(self,value):
-        self.writeConfig('triggerSlope',value)
-    def get_triggerSlope(self):
-        return self.readConfig('triggerSlope')
-    triggerSlope = property(get_triggerSlope, set_triggerSlope)
-
-    def set_triggerSource(self,value):
-        self.writeConfig('triggerSource',value)
-    def get_triggerSource(self):
-        return self.readConfig('triggerSource')
-    triggerSource = property(get_triggerSource, set_triggerSource )
-
-    def set_verticalCoupling(self,value):
-        self.writeConfig('verticalCoupling',value)
-    def get_verticalCoupling(self):
-        return self.readConfig('verticalCoupling')
-    verticalCoupling = property(get_verticalCoupling, set_verticalCoupling )
-
-    def set_verticalOffset(self,value):
-        self.writeConfig('verticalOffset',value)
-    def get_verticalOffset(self):
-        return self.readConfig('verticalOffset')
-    verticalOffset = property(get_verticalOffset, set_verticalOffset )
-
-    def set_verticalScale(self,value):
-        self.writeConfig('verticalScale',value)
-    def get_verticalScale(self):
-        return self.readConfig('verticalScale')
-    verticalScale = property(get_verticalScale, set_verticalScale )
-
-    def set_bufferSize(self,value):
-        self.writeConfig('bufferSize',value)
-    def get_bufferSize(self):
-        return self.readConfig('bufferSize')
-    bufferSize = property(get_bufferSize, set_bufferSize )
-
-    def writeConfig(self,param,value):
-        self.config[param] = value
-
-    def readConfig(self,param):
-        return self.config[param]
-
-    def setAll(self, config):
-
-        for param in self.config.keys():
-            if param not in config.keys():
-                raise AlazarError('ERROR: config is missing %s'%param)
-
-        for param in config.keys():
-            if param in self.config.keys():
-                self.writeConfig(param,config[param])
-            else:
-                raise AlazarError('ERROR: %s is not a config parameter'%param)
-
-        self.configureBoard()
-
-    # from memory_profiler import profile
-    # @profile
-    def configureBoard(self):
-        self.configData = ConfigData()
-        fieldNames = [ name for name, ftype in ConfigData._fields_]
-
-        for field in fieldNames:
-            value = getattr(self,field)
-            if isinstance(value,str):
-                value = value.encode('ascii')
-            setattr(self.configData,field,value)
-
-        self.acquisitionParams = AcquisitionParams()
-
-        retVal = _setAll(self.addr,byref(self.configData),byref(self.acquisitionParams))
-        if retVal < 0:
-            raise AlazarError('ERROR %s: setAll failed'%self.name)
-
+    def set_mode(acquireMode):
+        _SetMode(self.addr, acquireMode)
+    
+    def set_sample_rate(samplingRate):
+        _SetSampleRate(self.addr)
+    
+    def configure_vertical(verticalScale, verticalOffset, verticalCoupling):
+        _ConfigureVertical(self.addr)
+    
+    def set_bandwidth(bandwidthKey):
+        _SetBandwidth(self.addr)
+    
+    def configure_trigger(triggerLevel, triggerSource, triggerSlope, triggerCoupling, delay):
+        _ConfigureTrigger(self.addr)
+    
+    def configure_acquisition(recordLength, nbrSegments, nbrWaveforms, nbrRoundRobins):
+        self.acquisition_params = AcquisitionParams()
+        _ConfigureAcquisition(self.addr, recordLength, nbrSegments,
+            nbrWaveforms, nbrRoundRobins,byref(self.acquisitionParams))
         self.numberAcquisitions     = self.acquisitionParams.numberAcquisitions
         self.samplesPerAcquisition = self.acquisitionParams.samplesPerAcquisition
 
@@ -321,9 +168,10 @@ class ATS9870():
         self.ch1Buffer_p = self.ch1Buffer.ctypes.data_as(POINTER(c_float))
         self.ch2Buffer_p = self.ch2Buffer.ctypes.data_as(POINTER(c_float))
 
-    # @profile
     def acquire(self):
-        self.configureBoard()
+        # self.configureBoard()
+        if not hasattr(self.acquisition_params):
+            raise AlazarError("ERROR %s: acquisition params have not been set. Run configure_acquisition."%self.name)
         retVal = _acquire(self.addr)
         if retVal < 0:
             raise AlazarError('ERROR %s: acquire failed'%self.name)

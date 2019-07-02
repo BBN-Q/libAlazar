@@ -113,7 +113,7 @@ public:
   int32_t SetSampleRate(uint32_t samplingRate);
   int32_t ConfigureVertical(float verticalScale, float verticalOffset,
                                          const char *verticalCoupling);
-  int32_t SetBandwidth(const char *bandwidthKey);
+  int32_t SetBandwidth(const char *bandwidth);
   int32_t ConfigureTrigger(float triggerLevel, const char *triggerSource,
                            const char *triggerSlope, const char *triggerCoupling, float delay);
   int32_t ConfigureAcquisition(uint32_t recordLength, uint32_t nbrSegments, 

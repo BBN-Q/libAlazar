@@ -68,123 +68,123 @@ const option::Descriptor usage[] = {
     {0, 0, 0, 0, 0, 0}};
 
 int main(int argc, char *argv[]) {
+  return 0;
+//   argc -= (argc > 0);
+//   argv += (argc > 0); // skip program name argv[0] if present
+//   option::Stats stats(usage, argc, argv);
+//   option::Option *options = new option::Option[stats.options_max];
+//   option::Option *buffer = new option::Option[stats.buffer_max];
+//   option::Parser parse(usage, argc, argv, options, buffer);
 
-  argc -= (argc > 0);
-  argv += (argc > 0); // skip program name argv[0] if present
-  option::Stats stats(usage, argc, argv);
-  option::Option *options = new option::Option[stats.options_max];
-  option::Option *buffer = new option::Option[stats.buffer_max];
-  option::Parser parse(usage, argc, argv, options, buffer);
+//   if (parse.error())
+//     return -1;
 
-  if (parse.error())
-    return -1;
+//   if (options[HELP] || argc == 0) {
+//     option::printUsage(std::cout, usage);
+//     return 0;
+//   }
 
-  if (options[HELP] || argc == 0) {
-    option::printUsage(std::cout, usage);
-    return 0;
-  }
+//   for (option::Option *opt = options[UNKNOWN]; opt; opt = opt->next())
+//     std::cout << "Unknown option: " << opt->name << "\n";
 
-  for (option::Option *opt = options[UNKNOWN]; opt; opt = opt->next())
-    std::cout << "Unknown option: " << opt->name << "\n";
+//   for (int i = 0; i < parse.nonOptionsCount(); ++i)
+//     std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
-  for (int i = 0; i < parse.nonOptionsCount(); ++i)
-    std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
+//   // Logging level
+//   // TLogLevel logLevel = plog::info;
+//   // if (options[LOGGING_LEVEL]) {
+//   //   logLevel = TLogLevel(atoi(options[LOGGING_LEVEL].arg));
+//   // }
 
-  // Logging level
-  // TLogLevel logLevel = plog::info;
-  // if (options[LOGGING_LEVEL]) {
-  //   logLevel = TLogLevel(atoi(options[LOGGING_LEVEL].arg));
-  // }
+//   // todo - make more parameters user configurable
+//   ConfigData_t config = {
+//       "averager", // acquire mode - "digitizer" or "averager"
+//       "Full",     // bandwidth - "Full" or "20MHz"
+//       "ref",      // todo - clockType, parameter currently not used
+//       0.0,        // trigger delay in seconds
+//       true,       // instrumrnt enabled
+//       "myAlazar", // instrument label
+//       4096,     // segmentLength - must be greater than 256 and a multiple of 16
+//       1,        // number of segments
+//       1,        // number of waveforms
+//       1,        // number of round robins
+//       500e6,    // sample rate
+//       "DC",     // trigger coupling - "AC" or "DC"
+//       1000,     // trigger threshold in mV
+//       "rising", // trigger edge slope - "rising" or "falling"
+//       "Ext",    // trigger source -  only "Ext" supported
+//       "AC",     // channel coupling - "AC" or "DC"
+//       0.0,      // channel offset
+//       4.0,      // channel scale
+//   };
 
-  // todo - make more parameters user configurable
-  ConfigData_t config = {
-      "averager", // acquire mode - "digitizer" or "averager"
-      "Full",     // bandwidth - "Full" or "20MHz"
-      "ref",      // todo - clockType, parameter currently not used
-      0.0,        // trigger delay in seconds
-      true,       // instrumrnt enabled
-      "myAlazar", // instrument label
-      4096,     // segmentLength - must be greater than 256 and a multiple of 16
-      1,        // number of segments
-      1,        // number of waveforms
-      1,        // number of round robins
-      500e6,    // sample rate
-      "DC",     // trigger coupling - "AC" or "DC"
-      1000,     // trigger threshold in mV
-      "rising", // trigger edge slope - "rising" or "falling"
-      "Ext",    // trigger source -  only "Ext" supported
-      "AC",     // channel coupling - "AC" or "DC"
-      0.0,      // channel offset
-      4.0,      // channel scale
-  };
+//   if (options[MODE]) {
+//     config.acquireMode = options[MODE].arg;
+//   }
+//   if (options[RECORDLENGTH]) {
+//     config.recordLength = atoi(options[RECORDLENGTH].arg);
+//   }
+//   if (options[SEGMENTS]) {
+//     config.nbrSegments = atoi(options[SEGMENTS].arg);
+//   }
+//   if (options[WAVEFORMS]) {
+//     config.nbrWaveforms = atoi(options[WAVEFORMS].arg);
+//   }
+//   if (options[ROUNDROBINS]) {
+//     config.nbrRoundRobins = atoi(options[ROUNDROBINS].arg);
+//   }
+//   if (options[SAMPLINGRATE]) {
+//     config.samplingRate = atof(options[SAMPLINGRATE].arg);
+//   }
+//   uint32_t timeout = 1000;
+//   if (options[TIMEOUT]) {
+//     timeout = atoi(options[TIMEOUT].arg);
+//   }
 
-  if (options[MODE]) {
-    config.acquireMode = options[MODE].arg;
-  }
-  if (options[RECORDLENGTH]) {
-    config.recordLength = atoi(options[RECORDLENGTH].arg);
-  }
-  if (options[SEGMENTS]) {
-    config.nbrSegments = atoi(options[SEGMENTS].arg);
-  }
-  if (options[WAVEFORMS]) {
-    config.nbrWaveforms = atoi(options[WAVEFORMS].arg);
-  }
-  if (options[ROUNDROBINS]) {
-    config.nbrRoundRobins = atoi(options[ROUNDROBINS].arg);
-  }
-  if (options[SAMPLINGRATE]) {
-    config.samplingRate = atof(options[SAMPLINGRATE].arg);
-  }
-  uint32_t timeout = 1000;
-  if (options[TIMEOUT]) {
-    timeout = atoi(options[TIMEOUT].arg);
-  }
+//   AcquisitionParams_t acqParams;
 
-  AcquisitionParams_t acqParams;
+//   // this is a hack because because MSYS2 does not handle
+//   std::thread quit(waitForQuit);
+//   quit.detach();
 
-  // this is a hack because because MSYS2 does not handle
-  std::thread quit(waitForQuit);
-  quit.detach();
+//   connectBoard(1, NULL);
+//   if (setAll(1, &config, &acqParams) < 0) {
+//     exit(-1);
+//   }
 
-  connectBoard(1, NULL);
-  if (setAll(1, &config, &acqParams) < 0) {
-    exit(-1);
-  }
+//   // allocate channel data memory
+//   float *ch1 = new float[acqParams.samplesPerAcquisition];
+//   float *ch2 = new float[acqParams.samplesPerAcquisition];
 
-  // allocate channel data memory
-  float *ch1 = new float[acqParams.samplesPerAcquisition];
-  float *ch2 = new float[acqParams.samplesPerAcquisition];
+//   // open a couple of files for storing the data
+//   FILE *f1 = fopen("ch1.dat", "wb");
+//   FILE *f2 = fopen("ch2.dat", "wb");
 
-  // open a couple of files for storing the data
-  FILE *f1 = fopen("ch1.dat", "wb");
-  FILE *f2 = fopen("ch2.dat", "wb");
+//   acquire(1);
 
-  acquire(1);
+// #if 1
+//   uint32_t count = 0;
+//   uint32_t buffer_timeout = 0;
+//   while (count < acqParams.numberAcquisitions) {
+//     // printf("rr %d count %d\n",config.nbrRoundRobins,count);
+//     force_trigger(1);
+//     fflush(stdout);
+//     if( wait_for_acquisition(1,ch1, ch2) ) {
+//       buffer_timeout=0;
+//       count++;
+//       fwrite(ch1,sizeof(float),acqParams.samplesPerAcquisition,f1);
+//       fwrite(ch2,sizeof(float),acqParams.samplesPerAcquisition,f2);
+//     }
+//     std::this_thread::sleep_for(std::chrono::microseconds(1000));
+//     if (buffer_timeout++ > timeout)
+//       break;
+//   }
+// #endif
+//   stop(1);
+//   disconnect(1);
 
-#if 1
-  uint32_t count = 0;
-  uint32_t buffer_timeout = 0;
-  while (count < acqParams.numberAcquisitions) {
-    // printf("rr %d count %d\n",config.nbrRoundRobins,count);
-    force_trigger(1);
-    fflush(stdout);
-    if( wait_for_acquisition(1,ch1, ch2) ) {
-      buffer_timeout=0;
-      count++;
-      fwrite(ch1,sizeof(float),acqParams.samplesPerAcquisition,f1);
-      fwrite(ch2,sizeof(float),acqParams.samplesPerAcquisition,f2);
-    }
-    std::this_thread::sleep_for(std::chrono::microseconds(1000));
-    if (buffer_timeout++ > timeout)
-      break;
-  }
-#endif
-  stop(1);
-  disconnect(1);
-
-  delete[] ch1;
-  delete[] ch2;
-  fclose(f1);
-  fclose(f2);
+//   delete[] ch1;
+//   delete[] ch2;
+//   fclose(f1);
+//   fclose(f2);
 }

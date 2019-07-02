@@ -57,10 +57,22 @@ typedef struct AcquisitionParams {
 } AcquisitionParams_t;
 
 
-APIEXPORT int32_t connectBoard(uint32_t boardID, const char *);
+// APIEXPORT int32_t connectBoard(uint32_t boardID, const char *);
 APIEXPORT int32_t disconnect(uint32_t boardID);
 APIEXPORT int32_t setAll(uint32_t boardId, const ConfigData_t *config,
                       AcquisitionParams_t *acqParams);
+
+APIEXPORT int32_t Connect(uint32_t boardId);
+APIEXPORT int32_t SetMode(uint32_t boardId, const char *acquireMode);
+APIEXPORT int32_t SetSampleRate(uint32_t boardId, uint32_t samplingRate);
+APIEXPORT int32_t ConfigureVertical(uint32_t boardId, float verticalScale, float verticalOffset,
+                                       const char *verticalCoupling);
+APIEXPORT int32_t SetBandwidth(uint32_t boardId, const char *bandwidthKey);
+APIEXPORT int32_t ConfigureTrigger(uint32_t boardId, float triggerLevel, const char *triggerSource,
+                         const char *triggerSlope, const char *triggerCoupling, float delay);
+APIEXPORT int32_t ConfigureAcquisition(uint32_t boardId, uint32_t recordLength, uint32_t nbrSegments, 
+                             uint32_t nbrWaveforms, uint32_t nbrRoundRobins,
+                             AcquisitionParams_t &acqParams);
 
 APIEXPORT uint32_t boardCount();
 APIEXPORT const char * boardInfo(uint32_t boardID);

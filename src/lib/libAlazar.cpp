@@ -174,16 +174,16 @@ int32_t AlazarATS9870::ConfigureVertical(float verticalScale, float verticalOffs
   return 0;
 }
 
-int32_t AlazarATS9870::SetBandwidth(const char *bandwidthKey) {
-  if (bandwidthMap.find(bandwidthKey) == bandwidthMap.end()) {
-    LOG(plog::error) << "Invalid Mode: " << bandwidthKey;
+int32_t AlazarATS9870::SetBandwidth(const char *bandwidth) {
+  if (bandwidthMap.find(bandwidth) == bandwidthMap.end()) {
+    LOG(plog::error) << "Invalid Mode: " << bandwidth;
     return (-1);
   }
   for (auto c : CHANNELS) {
     auto retCode = AlazarSetBWLimit(
         boardHandle,                  // HANDLE -- board handle
         c,                            // U8 -- channel identifier
-        bandwidthMap[bandwidthKey]    // U32 -- 0 = disable, 1 = enable
+        bandwidthMap[bandwidth]    // U32 -- 0 = disable, 1 = enable
         );
     if (retCode != ApiSuccess) {
       printError(retCode, __FILE__, __LINE__);
