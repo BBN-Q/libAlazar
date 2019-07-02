@@ -22,7 +22,7 @@ limitations under the License.
 #include <thread>
 #include <unistd.h>
 
-#include "logger.h"
+#include <plog/Log.h>
 #include "readerwriterqueue.h"
 
 #include "AlazarApi.h"

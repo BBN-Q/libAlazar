@@ -45,6 +45,8 @@ std::mutex mu;
 
 using namespace std;
 
+uint8_t CHANNELS[] = {CHANNEL_A, CHANNEL_B};
+
 uint32_t systemCount() {
   return AlazarNumOfSystems();
 }
@@ -57,7 +59,7 @@ std::string boardInfo(uint32_t systemId, uint32_t boardId) {
   std::ostringstream ss;
   uint32_t serialNumber;
   HANDLE handle = AlazarGetBoardBySystemID(systemId, boardId);
-  RETURN_CODE retCode = AlazarQueryCapability(handle, GET_SERIAL_NUMBER, 0, &serialNumber);
+  auto retCode = AlazarQueryCapability(handle, GET_SERIAL_NUMBER, 0, &serialNumber);
 
   if (retCode != ApiSuccess) {
     LOG(plog::error) << "AlazarQueryCapability failed -- "
@@ -77,7 +79,7 @@ AlazarATS9870::AlazarATS9870() : threadStop(false), threadRunning(false) {
 AlazarATS9870::~AlazarATS9870() {
   LOG(plog::verbose) << "Destructing ...";
 
-  RETURN_CODE retCode = AlazarCloseAUTODma(boardHandle);
+  auto retCode = AlazarCloseAUTODma(boardHandle);
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
   }
@@ -85,30 +87,33 @@ AlazarATS9870::~AlazarATS9870() {
   AlazarClose(boardHandle);
 }
 
-int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
-                                      const ConfigData_t &config,
-                                      AcquisitionParams_t &acqParams) {
-
+int32_t AlazarATS9870::Connect(uint32_t systemId, uint32_t boardId) {
   boardHandle = AlazarGetBoardBySystemID(systemId, boardId);
   if (boardHandle == NULL) {
     LOG(plog::error) << "Open systemId " << systemId << " boardId " << boardId
                        << " failed";
     return -1;
   }
+  return 0;
+}
 
+int32_t AlazarATS9870::SetMode(const char *acquireMode) {
   // set averager mode or digitizer mode
-  const char *acquireModeKey = config.acquireMode;
-  if (modeMap.find(acquireModeKey) == modeMap.end()) {
-    LOG(plog::error) << "Invalid Mode: " << acquireModeKey;
+  if (modeMap.find(acquireMode) == modeMap.end()) {
+    LOG(plog::error) << "Invalid Mode: " << acquireMode;
     return (-1);
   }
   averager = modeMap[config.acquireMode];
+  return 0;
+}
 
+int32_t AlazarATS9870::SetSampleRate(uint32_t samplingRate) {
   // set the sample rate parameters:
   // SampleRateId is set to 1e9 and there is an external ref clock configured
   // so the sample rate is 1e9/decimation; decimation factor has to be 1,2,4
   // or any multiple of 10
-  uint32_t decimation = 1000000000 / static_cast<uint32_t>(config.samplingRate);
+  sampleRate = samplingRate;
+  uint32_t decimation = 1000000000 / samplingRate;
   LOG(plog::info) << "Decimation " << decimation;
   if (decimation != 1 && decimation != 2 && decimation != 4) {
     if (decimation % 10 != 0) {
@@ -117,7 +122,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     }
   }
 
-  RETURN_CODE retCode =
+  auto retCode =
       AlazarSetCaptureClock(boardHandle,              // HANDLE -- board handle
                             EXTERNAL_CLOCK_10MHz_REF, // U32 -- clock source id
                             1000000000,        // U32 -- sample rate id - 1e9
@@ -128,111 +133,99 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     printError(retCode, __FILE__, __LINE__);
     return -1;
   }
+  return 0;
+}
 
+int32_t AlazarATS9870::ConfigureVertical(float verticalScale, float verticalOffset,
+                                         const char *verticalCoupling) {
   // set up the channel parameters for channel A
-  channelScale = config.verticalScale;
-  channelOffset = config.verticalOffset;
+  channelScale = verticalScale;
+  channelOffset = verticalOffset;
   counts2Volts = 2 * channelScale / 256.0;
 
-  uint32_t rangeIDKey = static_cast<uint32_t>(std::lround(config.verticalScale * 1000));
+  uint32_t rangeIDKey = static_cast<uint32_t>(std::lround(verticalScale * 1000));
   if (rangeIdMap.find(rangeIDKey) == rangeIdMap.end()) {
     LOG(plog::error) << "Invalid Channel Scale: " << rangeIDKey;
     return (-1);
   }
 
-  const char *couplingKey = config.verticalCoupling;
-  if (couplingMap.find(couplingKey) == couplingMap.end()) {
-    LOG(plog::error) << "Invalid Channel Coupling: " << couplingKey;
+  if (couplingMap.find(verticalCoupling) == couplingMap.end()) {
+    LOG(plog::error) << "Invalid Channel Coupling: " << verticalCoupling;
     return (-1);
   }
 
   LOG(plog::info) << "Input Range: " << channelScale
-                    << " ID: " << rangeIdMap[rangeIDKey];
+                  << " ID: " << rangeIdMap[rangeIDKey];
   LOG(plog::info) << "Counts2Volts: " << counts2Volts;
 
-  retCode =
-      AlazarInputControl(boardHandle,              // HANDLE -- board handle
-                         CHANNEL_A,                // U8 -- input channel
-                         couplingMap[couplingKey], // U32 -- input coupling id
-                         // TODO verify values for vertical scale
-                         rangeIdMap[rangeIDKey], // U32 -- input range id
-                         IMPEDANCE_50_OHM        // U32 -- input impedance id
-                         );
-  if (retCode != ApiSuccess) {
-    printError(retCode, __FILE__, __LINE__);
-    return -1;
+  for (auto c : CHANNELS) {
+    auto retCode = AlazarInputControl(
+       boardHandle,                     // HANDLE -- board handle
+       c,                               // U8 -- input channel
+       couplingMap[verticalCoupling],   // U32 -- input coupling id
+       rangeIdMap[rangeIDKey],          // U32 -- input range id
+       IMPEDANCE_50_OHM                 // U32 -- input impedance id
+       );
+    if (retCode != ApiSuccess) {
+      printError(retCode, __FILE__, __LINE__);
+      return -1;
+    }
   }
+  return 0;
+}
 
-  const char *bandwidthKey = config.bandwidth;
+int32_t AlazarATS9870::SetBandwidth(const char *bandwidthKey) {
   if (bandwidthMap.find(bandwidthKey) == bandwidthMap.end()) {
     LOG(plog::error) << "Invalid Mode: " << bandwidthKey;
     return (-1);
   }
-  retCode = AlazarSetBWLimit(
-      boardHandle,                  // HANDLE -- board handle
-      CHANNEL_A,                    // U8 -- channel identifier
-      bandwidthMap[config.bandwidth] // U32 -- 0 = disable, 1 = enable
-      );
-  if (retCode != ApiSuccess) {
-    printError(retCode, __FILE__, __LINE__);
-    return -1;
+  for (auto c : CHANNELS) {
+    auto retCode = AlazarSetBWLimit(
+        boardHandle,                  // HANDLE -- board handle
+        c,                            // U8 -- channel identifier
+        bandwidthMap[bandwidthKey]    // U32 -- 0 = disable, 1 = enable
+        );
+    if (retCode != ApiSuccess) {
+      printError(retCode, __FILE__, __LINE__);
+      return -1;
+    }
   }
+  return 0;
+}
 
-  // set up the channel parameters for channel B
-  retCode = AlazarInputControl(
-      boardHandle,                          // HANDLE -- board handle
-      CHANNEL_B,                            // U8 -- input channel
-      couplingMap[config.verticalCoupling], // U32 -- input coupling id
-      rangeIdMap[rangeIDKey],               // U32 -- input range id
-      IMPEDANCE_50_OHM                      // U32 -- input impedance id
-      );
-  if (retCode != ApiSuccess) {
-    printError(retCode, __FILE__, __LINE__);
-    return -1;
-  }
-
-  retCode = AlazarSetBWLimit(
-      boardHandle,                  // HANDLE -- board handle
-      CHANNEL_B,                    // U8 -- channel identifier
-      bandwidthMap[config.bandwidth] // U32 -- 0 = disable, 1 = enable
-      );
-  if (retCode != ApiSuccess) {
-    printError(retCode, __FILE__, __LINE__);
-    return -1;
-  }
-
+int32_t AlazarATS9870::ConfigureTrigger(float triggerLevel, const char *triggerSource,
+  const char *triggerSlope, const char *triggerCoupling, float delay) {
+  
   // Select trigger inputs and levels as required
   // trigLevelCode = uint8(128 +
   // 127*(trigSettings.triggerLevel/1000/trigChannelRange));
   // uint32_t = conf->triggerLevel
   uint32_t trigChannelRange = 5;
   uint32_t trigLevelCode = static_cast<uint32_t>(
-      128 + 127 * (config.triggerLevel / 1000 / trigChannelRange));
+      128 + 127 * (triggerLevel / 1000 / trigChannelRange));
   LOG(plog::info) << "Trigger Level Code " << trigLevelCode;
 
-  const char *triggerSourceKey = config.triggerSource;
-  if (triggerSourceMap.find(triggerSourceKey) == triggerSourceMap.end()) {
-    LOG(plog::error) << "Invalid Trigger Source ID: " << triggerSourceKey;
+  if (triggerSourceMap.find(triggerSource) == triggerSourceMap.end()) {
+    LOG(plog::error) << "Invalid Trigger Source ID: " << triggerSource;
     return (-1);
   }
 
-  const char *triggerSlopeMapKey = config.triggerSlope;
-  if (triggerSlopeMap.find(triggerSlopeMapKey) == triggerSlopeMap.end()) {
-    LOG(plog::error) << "Invalid Trigger Coupling: " << triggerSlopeMapKey;
+  if (triggerSlopeMap.find(triggerSlope) == triggerSlopeMap.end()) {
+    LOG(plog::error) << "Invalid Trigger Coupling: " << triggerSlope;
     return (-1);
   }
 
-  retCode = AlazarSetTriggerOperation(
+  auto retCode = AlazarSetTriggerOperation(
       boardHandle,                            // HANDLE -- board handle
       TRIG_ENGINE_OP_J,                       // U32 -- trigger operation
       TRIG_ENGINE_J,                          // U32 -- trigger engine id
-      triggerSourceMap[config.triggerSource], // U32 -- trigger source id
-      triggerSlopeMap[config.triggerSlope],   // U32 -- trigger slope id
-      trigLevelCode, // U32 -- trigger level from 0 (-range) to 255 (+range)
-      TRIG_ENGINE_K, // U32 -- trigger engine id
-      TRIG_DISABLE,  // U32 -- trigger source id for engine K
-      TRIGGER_SLOPE_POSITIVE, // U32 -- trigger slope id
-      128 // U32 -- trigger level from 0 (-range) to 255 (+range)
+      triggerSourceMap[triggerSource],        // U32 -- trigger source id
+      triggerSlopeMap[triggerSlope],          // U32 -- trigger slope id
+      trigLevelCode,                          // U32 -- trigger level from 0 (-range) to 255 (+range)
+      TRIG_ENGINE_K,                          // U32 -- trigger engine id
+      TRIG_DISABLE,                           // U32 -- trigger source id for engine K
+      TRIGGER_SLOPE_POSITIVE,                 // U32 -- trigger slope id
+      128                                     // U32 -- trigger level from 0 (-range) to 255 (+range)
       );
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
@@ -241,16 +234,14 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
 
   // set up external triggerCoupling
   // TODO - add channel based triggering
-  couplingKey = config.triggerCoupling;
-  if (couplingMap.find(couplingKey) == couplingMap.end()) {
-    LOG(plog::error) << "Invalid Trigger Coupling: " << couplingKey;
+  if (couplingMap.find(triggerCoupling) == couplingMap.end()) {
+    LOG(plog::error) << "Invalid Trigger Coupling: " << triggerCoupling;
     return (-1);
   }
 
   retCode = AlazarSetExternalTrigger(
       boardHandle,                         // HANDLE -- board handle
-      couplingMap[config.triggerCoupling], // U32 -- external trigger coupling
-                                           // id
+      couplingMap[triggerCoupling],        // U32 -- external trigger coupling
       ETR_5V                               // U32 -- external trigger range id
       );
   if (retCode != ApiSuccess) {
@@ -259,7 +250,7 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
   }
 
   // set the trigger delay in samples
-  uint32_t trigDelayPts = config.samplingRate * config.delay;
+  uint32_t trigDelayPts = static_cast<uint32_t>(sampleRate * delay);
   LOG(plog::info) << "Trigger Delay " << trigDelayPts;
   retCode = AlazarSetTriggerDelay(boardHandle, trigDelayPts);
   if (retCode != ApiSuccess) {
@@ -276,28 +267,31 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     printError(retCode, __FILE__, __LINE__);
     return -1;
   }
+  return 0;
+}
 
-  recordLength = config.recordLength;
+int32_t AlazarATS9870::ConfigureAcquisition(uint32_t recordLength_, uint32_t nbrSegments_, 
+                                            uint32_t nbrWaveforms_, uint32_t nbrRoundRobins_,
+                                            AcquisitionParams_t &acqParams) {
+  recordLength   = recordLength_;
+  nbrSegments    = nbrSegments_;
+  nbrWaveforms   = nbrWaveforms_;
+  nbrRoundRobins = nbrRoundRobins_;
 
   if (recordLength < 256) {
     LOG(plog::error) << "recordLength less than 256";
     return -1;
   }
-
   if (recordLength % 64 != 0) {
     LOG(plog::error) << "recordLength is not aligned on a 64 sample boundary";
     return -1;
   }
 
   LOG(plog::info) << "recordLength: " << recordLength;
-  retCode = AlazarSetRecordSize(boardHandle, 0, recordLength);
+  auto retCode = AlazarSetRecordSize(boardHandle, 0, recordLength);
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
   }
-
-  nbrSegments = config.nbrSegments;
-  nbrWaveforms = config.nbrWaveforms;
-  nbrRoundRobins = config.nbrRoundRobins;
 
   // compute records per buffer and records per acquisition
   if (getBufferSize() < 0) {
@@ -344,6 +338,24 @@ int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
     LOG(plog::info) << "num floats per send: " << num_floats;
     LOG(plog::info) << "socket buffer size: " << socketbuffsize;
   return 0;
+}
+
+int32_t AlazarATS9870::ConfigureBoard(uint32_t systemId, uint32_t boardId,
+                                      const ConfigData_t &config,
+                                      AcquisitionParams_t &acqParams) {
+  int32_t ret = 0;
+
+  ret += Connect(systemId, boardId);  
+  ret += SetMode(config.acquireMode);
+  ret += SetSampleRate(static_cast<uint32_t>(config.samplingRate));
+  ret += ConfigureVertical(config.verticalScale, config.verticalOffset, config.verticalCoupling);
+  ret += SetBandwidth(config.bandwidth);
+  ret += ConfigureTrigger(config.triggerLevel, config.triggerSource,
+                          config.triggerSlope, config.triggerCoupling, config.delay);
+  ret += ConfigureAcquisition(static_cast<uint32_t>(recordLength), static_cast<uint32_t>(nbrSegments), 
+                       static_cast<uint32_t>(nbrWaveforms), static_cast<uint32_t>(nbrRoundRobins),
+                       acqParams);
+  return ret;
 }
 
 int32_t AlazarATS9870::rx(int32_t* ready) {
@@ -478,7 +490,7 @@ int32_t AlazarATS9870::rxThreadRun(void) {
     return -1;
   }
 
-  RETURN_CODE retCode = AlazarBeforeAsyncRead(
+  auto retCode = AlazarBeforeAsyncRead(
       boardHandle, CHANNEL_A | CHANNEL_B, 0, recordLength, recordsPerBuffer,
       recordsPerAcquisition,
       ADMA_NPT | ADMA_EXTERNAL_STARTCAPTURE | ADMA_INTERLEAVE_SAMPLES);
@@ -526,7 +538,7 @@ void AlazarATS9870::rxThreadStop(void) {
     }
     threadRunning = false;
 
-    RETURN_CODE retCode = AlazarAbortAsyncRead(boardHandle);
+    auto retCode = AlazarAbortAsyncRead(boardHandle);
     if (retCode != ApiSuccess) {
       printError(retCode, __FILE__, __LINE__);
     }
@@ -552,7 +564,7 @@ int32_t AlazarATS9870::postBuffer(shared_ptr<std::vector<uint8_t>> buff) {
     ;
   while (!bufferQ.push(buff))
     ;
-  RETURN_CODE retCode =
+  auto retCode =
       AlazarPostAsyncBuffer(boardHandle, buff.get()->data(), bufferLen);
 
   if (retCode != ApiSuccess) {
@@ -805,7 +817,7 @@ void AlazarATS9870::printError(RETURN_CODE code, std::string file,
 int32_t AlazarATS9870::sysInfo() {
   // log the sdk RevisionNumber
   uint8_t major, minor, rev;
-  RETURN_CODE retCode = AlazarGetSDKVersion(&major, &minor, &rev);
+  auto retCode = AlazarGetSDKVersion(&major, &minor, &rev);
   if (retCode != ApiSuccess) {
     printError(retCode, __FILE__, __LINE__);
   } else {
@@ -840,7 +852,7 @@ int32_t AlazarATS9870::sysInfo() {
 //   std::ostringstream ss;
 //   uint32_t serialNumber;
 //   HANDLE handle = AlazarGetBoardBySystemID(systemId, boardId);
-//   RETURN_CODE retCode = AlazarQueryCapability(handle, GET_SERIAL_NUMBER, 0, &serialNumber);
+//   auto retCode = AlazarQueryCapability(handle, GET_SERIAL_NUMBER, 0, &serialNumber);
 
 //   if (retCode != ApiSuccess) {
 //     LOG(plog::error) << "AlazarQueryCapability failed -- "
@@ -880,7 +892,7 @@ int32_t AlazarATS9870::DisplaySystemInfo(uint32_t systemId) {
   }
 
   uint8_t driverMajor, driverMinor, driverRev;
-  RETURN_CODE retCode =
+  auto retCode =
       AlazarGetDriverVersion(&driverMajor, &driverMinor, &driverRev);
   if (retCode != ApiSuccess) {
     LOG(plog::error) << "AlazarGetDriverVersion failed "
@@ -1051,7 +1063,7 @@ int32_t AlazarATS9870::FlashLed(HANDLE handle, int32_t cycleCount,
 
     for (int phase = 0; phase < phaseCount; phase++) {
       uint32_t state = (phase == 0) ? LED_ON : LED_OFF;
-      RETURN_CODE retCode = AlazarSetLED(handle, state);
+      auto retCode = AlazarSetLED(handle, state);
       if (retCode != ApiSuccess)
         printError(retCode, __FILE__, __LINE__);
 
@@ -1150,7 +1162,7 @@ string AlazarATS9870::BoardTypeToText(int boardType) {
 int32_t AlazarATS9870::force_trigger( void )
 {
 
-    RETURN_CODE retCode = AlazarForceTrigger(boardHandle);
+    auto retCode = AlazarForceTrigger(boardHandle);
     if (retCode != ApiSuccess)
     {
         printError(retCode,__FILE__,__LINE__);

@@ -97,6 +97,7 @@ public:
   uint32_t nbrBuffers;
 
   uint32_t samplesPerAcquisition;
+  uint32_t sampleRate;
 
   AlazarATS9870();
   ~AlazarATS9870();
@@ -106,6 +107,19 @@ public:
 
   int32_t postBuffer(std::shared_ptr<std::vector<uint8_t>>);
   void printError(RETURN_CODE code, std::string file, int32_t line);
+  
+  int32_t Connect(uint32_t systemId, uint32_t boardId);
+  int32_t SetMode(const char *acquireMode);
+  int32_t SetSampleRate(uint32_t samplingRate);
+  int32_t ConfigureVertical(float verticalScale, float verticalOffset,
+                                         const char *verticalCoupling);
+  int32_t SetBandwidth(const char *bandwidthKey);
+  int32_t ConfigureTrigger(float triggerLevel, const char *triggerSource,
+                           const char *triggerSlope, const char *triggerCoupling, float delay);
+  int32_t ConfigureAcquisition(uint32_t recordLength, uint32_t nbrSegments, 
+                               uint32_t nbrWaveforms, uint32_t nbrRoundRobins,
+                               AcquisitionParams_t &acqParams);
+
   int32_t ConfigureBoard(uint32_t systemId, uint32_t boardId,
                          const ConfigData_t &config,
                          AcquisitionParams_t &acqParams);
