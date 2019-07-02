@@ -103,7 +103,7 @@ int32_t AlazarATS9870::SetMode(const char *acquireMode) {
     LOG(plog::error) << "Invalid Mode: " << acquireMode;
     return (-1);
   }
-  averager = modeMap[config.acquireMode];
+  averager = modeMap[acquireMode];
   return 0;
 }
 
