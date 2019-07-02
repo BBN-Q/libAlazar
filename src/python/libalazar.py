@@ -37,9 +37,9 @@ class AcquisitionParams(Structure):
     _fields_ = [("samplesPerAcquisition", c_uint32),
                 ("numberAcquisitions",     c_uint32)]
 
-_setAll = lib.setAll
-_setAll.argtypes = [c_uint32,POINTER(ConfigData),POINTER(AcquisitionParams)]
-_setAll.restype = c_int32
+# _setAll = lib.setAll
+# _setAll.argtypes = [c_uint32,POINTER(ConfigData),POINTER(AcquisitionParams)]
+# _setAll.restype = c_int32
 
 _Connect = lib.Connect
 _Connect.argtypes = [c_uint32]
@@ -131,28 +131,25 @@ class ATS9870():
             raise AlazarError('ERROR %s: connectBoard failed'%self.name)
         return retVal
 
-    def connect():
-        _Connect(self.addr)
-
-    def set_mode(acquireMode):
+    def set_mode(self, acquireMode):
         _SetMode(self.addr, acquireMode)
     
-    def set_sample_rate(samplingRate):
-        _SetSampleRate(self.addr)
+    def set_sample_rate(self, samplingRate):
+        _SetSampleRate(self.addr, samplingRate)
     
-    def configure_vertical(verticalScale, verticalOffset, verticalCoupling):
-        _ConfigureVertical(self.addr)
+    def configure_vertical(self, verticalScale, verticalOffset, verticalCoupling):
+        _ConfigureVertical(self.addr, verticalScale, verticalOffset, verticalCoupling)
     
-    def set_bandwidth(bandwidthKey):
-        _SetBandwidth(self.addr)
+    def set_bandwidth(self, bandwidth):
+        _SetBandwidth(self.addr, bandwidth)
     
-    def configure_trigger(triggerLevel, triggerSource, triggerSlope, triggerCoupling, delay):
-        _ConfigureTrigger(self.addr)
+    def configure_trigger(self, triggerLevel, triggerSource, triggerSlope, triggerCoupling, delay):
+        _ConfigureTrigger(self.addr, triggerLevel, triggerSource, triggerSlope, triggerCoupling, delay)
     
-    def configure_acquisition(recordLength, nbrSegments, nbrWaveforms, nbrRoundRobins):
+    def configure_acquisition(self, recordLength, nbrSegments, nbrWaveforms, nbrRoundRobins):
         self.acquisition_params = AcquisitionParams()
         _ConfigureAcquisition(self.addr, recordLength, nbrSegments,
-            nbrWaveforms, nbrRoundRobins,byref(self.acquisitionParams))
+            nbrWaveforms, nbrRoundRobins, byref(self.acquisitionParams))
         self.numberAcquisitions     = self.acquisitionParams.numberAcquisitions
         self.samplesPerAcquisition = self.acquisitionParams.samplesPerAcquisition
 
