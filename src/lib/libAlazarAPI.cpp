@@ -70,6 +70,14 @@ LoggerStartup::LoggerStartup() {
 
 static LoggerStartup _loggerstartup;
 
+uint32_t boardCount() {
+  return boardCount(1);
+}
+
+const char * boardInfo(uint32_t boardID) {
+  return boardInfo(1, boardID).data();
+}
+
 int32_t connectBoard(uint32_t boardId, const char *logFile) {
   std::cout << "In connect board for board " << static_cast<int>(boardId) << std::endl;
 

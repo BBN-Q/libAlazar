@@ -40,6 +40,12 @@ limitations under the License.
 #define PREF_BUFFER_SIZE 4000000 // 4M (suggestion from Alazar manual for DMA transfers)
 #define SOCKET_TX_MAX 219264
 
+
+uint32_t systemCount();
+uint32_t boardCount(uint32_t systemId);
+std::string boardInfo(uint32_t systemId, uint32_t boardId);
+
+
 class AlazarATS9870 {
 
 public:

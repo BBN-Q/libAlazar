@@ -45,6 +45,31 @@ std::mutex mu;
 
 using namespace std;
 
+uint32_t systemCount() {
+  return AlazarNumOfSystems();
+}
+
+uint32_t boardCount(uint32_t systemId) {
+  return AlazarBoardsInSystemBySystemID(systemId);
+}
+
+std::string boardInfo(uint32_t systemId, uint32_t boardId) {
+  std::ostringstream ss;
+  uint32_t serialNumber;
+  HANDLE handle = AlazarGetBoardBySystemID(systemId, boardId);
+  RETURN_CODE retCode = AlazarQueryCapability(handle, GET_SERIAL_NUMBER, 0, &serialNumber);
+
+  if (retCode != ApiSuccess) {
+    LOG(plog::error) << "AlazarQueryCapability failed -- "
+                       << AlazarErrorToText(retCode);
+    ss << "Alazar ATS9870 UnknownSerial";
+  } else {
+    ss << "Alazar ATS9870 " << to_string(serialNumber);
+  }
+  return ss.str();
+}
+
+
 AlazarATS9870::AlazarATS9870() : threadStop(false), threadRunning(false) {
   LOG(plog::verbose) << "Constructing ... ";
 }
@@ -802,6 +827,30 @@ int32_t AlazarATS9870::sysInfo() {
 
   return 0;
 }
+
+// uint32_t systemCount() {
+//   return AlazarNumOfSystems();
+// }
+
+// uint32_t boardCount(uint32_t systemId) {
+//   return AlazarBoardsInSystemBySystemID(systemId);
+// }
+
+// std::string boardInfo(uint32_t systemId, uint32_t boardId) {
+//   std::ostringstream ss;
+//   uint32_t serialNumber;
+//   HANDLE handle = AlazarGetBoardBySystemID(systemId, boardId);
+//   RETURN_CODE retCode = AlazarQueryCapability(handle, GET_SERIAL_NUMBER, 0, &serialNumber);
+
+//   if (retCode != ApiSuccess) {
+//     LOG(plog::error) << "AlazarQueryCapability failed -- "
+//                        << AlazarErrorToText(retCode);
+//     ss << "Alazar ATS9870 UnknownSerial";
+//   } else {
+//     ss << "Alazar ATS9870 " << to_string(serialNumber);
+//   }
+//   return ss.str();
+// }
 
 //---------------------------------------------------------------------------
 //

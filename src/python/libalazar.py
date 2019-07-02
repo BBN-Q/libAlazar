@@ -71,6 +71,14 @@ _disconnect = lib.disconnect
 _disconnect.argtypes = [c_uint32]
 _disconnect.restype = c_int32
 
+_board_count = lib.boardCount
+_board_count.argtypes = []
+_board_count.restype = c_uint32
+
+_board_info = lib.boardInfo
+_board_info.argtypes = [c_uint32]
+_board_info.restype = c_char_p
+
 _stop = lib.stop
 _stop.argtypes = [c_uint32]
 _stop.restype = c_int32
@@ -94,6 +102,9 @@ _register_socket.restype = c_int32
 _unregister_sockets = lib.unregister_sockets
 _unregister_sockets.argtypes = [c_uint32]
 _unregister_sockets.restype = c_int32
+
+def enumerate_boards():
+    return [_board_info(board_num+1).decode() for board_num in range(_board_count())]
 
 class AlazarError(Exception):
     def __init__(self, msg):

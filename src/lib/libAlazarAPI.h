@@ -62,6 +62,9 @@ APIEXPORT int32_t disconnect(uint32_t boardID);
 APIEXPORT int32_t setAll(uint32_t boardId, const ConfigData_t *config,
                       AcquisitionParams_t *acqParams);
 
+APIEXPORT uint32_t boardCount();
+APIEXPORT const char * boardInfo(uint32_t boardID);
+
 APIEXPORT int32_t acquire(uint32_t boardId);
 APIEXPORT int32_t wait_for_acquisition(uint32_t boardID, float *ch1, float *ch2);
 APIEXPORT int32_t stop(uint32_t boardID);
